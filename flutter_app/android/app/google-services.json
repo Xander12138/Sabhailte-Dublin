@@ -1,0 +1,46 @@
+{
+  "project_info": {
+    "project_number": "914170332121",
+    "project_id": "sabhailte-dublin",
+    "storage_bucket": "sabhailte-dublin.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:914170332121:android:310420090141eee4ed0fc8",
+        "android_client_info": {
+          "package_name": "com.example.sabhailte_dublin"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "914170332121-8tgffpdanh46h03ov0j69bp2lrh8esti.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBwqNgsplNLS4jOrgnm2RaF7EzStt-BeQc"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "914170332121-8tgffpdanh46h03ov0j69bp2lrh8esti.apps.googleusercontent.com",
+              "client_type": 3
+            },
+            {
+              "client_id": "914170332121-ib7au2a56buritqs6di0k8rcch13pq0n.apps.googleusercontent.com",
+              "client_type": 2,
+              "ios_info": {
+                "bundle_id": "com.example.sabhailteDubin"
+              }
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

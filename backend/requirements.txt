@@ -1,0 +1,6 @@
+absl-py
+fastapi
+psycopg2-binary
+python-dotenv
+uvicorn
+uvicorn[standard]
