@@ -1,10 +1,13 @@
 import os
+import uuid
+from datetime import datetime, timezone
 
 import psycopg2
 from psycopg2.extras import RealDictCursor
 
 
 class DB:
+    """Database connection handler."""
     conn = psycopg2.connect(
         dbname=os.getenv('POSTGRES_DB'),
         user=os.getenv('POSTGRES_USER'),
@@ -12,23 +15,6 @@ class DB:
         host=os.getenv('POSTGRES_HOST'),
         port=os.getenv('POSTGRES_PORT'),
     )
-
-
-def get_version():
-    """Get the PostgreSQL version."""
-    conn = psycopg2.connect(
-        dbname=os.getenv('POSTGRES_DB'),
-        user=os.getenv('POSTGRES_USER'),
-        password=os.getenv('POSTGRES_PASSWORD'),
-        host=os.getenv('POSTGRES_HOST'),
-        port=os.getenv('POSTGRES_PORT'),
-    )
-    cur = conn.cursor()
-    cur.execute('SELECT version();')
-    db_version = cur.fetchone()
-    cur.close()
-    conn.close()
-    return db_version
 
 
 def get_connection():
@@ -44,38 +30,107 @@ def get_connection():
 
 def add_disaster_to_db(title, description, time, location):
     """Add a disaster to the database."""
-    conn = get_connection()
-    cur = conn.cursor()
-    try:
-        cur.execute(
-            """
-            INSERT INTO disasters (title, description, time, location)
-            VALUES (%s, %s, %s, %s)
-            RETURNING id;
-            """,
-            (title, description, time, location),
-        )
-        disaster_id = cur.fetchone()[0]
-        conn.commit()
-        return disaster_id
-    except Exception as e:
-        conn.rollback()
-        raise e
-    finally:
-        cur.close()
-        conn.close()
+    with get_connection() as conn:
+        with conn.cursor() as cur:
+            cur.execute(
+                """
+                INSERT INTO disasters (title, description, time, location)
+                VALUES (%s, %s, %s, %s)
+                RETURNING id;
+                """,
+                (title, description, time, location),
+            )
+            return cur.fetchone()[0]
 
 
 def get_all_disasters():
     """Retrieve all disasters from the database."""
-    conn = get_connection()
-    cur = conn.cursor(cursor_factory=RealDictCursor)
-    try:
-        cur.execute('SELECT * FROM disasters;')
-        disasters = cur.fetchall()
-        return disasters
-    except Exception as e:
-        raise e
-    finally:
-        cur.close()
-        conn.close()
+    with get_connection() as conn:
+        with conn.cursor(cursor_factory=RealDictCursor) as cur:
+            cur.execute('SELECT * FROM disasters;')
+            return cur.fetchall()
+
+
+def _generate_id(type):
+    """Generate a unique ID with a prefix."""
+    prefixes = {
+        'user': 'u_',
+        'news': 'news_',
+    }
+
+    if type not in prefixes:
+        raise ValueError('ID type is not supported')
+
+    return prefixes[type] + uuid.uuid1().hex
+
+
+def _current_utc_time():
+    """Get the current UTC time."""
+    return datetime.now(timezone.utc)
+
+
+def execute_multiple_sqls(sql_params_list: list):
+    """Execute multiple SQL statements in a single transaction.
+
+    Args:
+        sql_params_list: list of tuples, each containing an SQL statement and its parameters.
+        Example: [(sql, params), (sql, params), ...]
+    """
+    results = []
+    with get_connection() as conn:
+        with conn.cursor() as cursor:
+            for sql, params in sql_params_list:
+                cursor.execute(sql, params)
+                results.append(cursor.fetchall())
+        conn.commit()
+    return results
+
+
+def _execute_sql_fetch_one(sql: str, params: tuple, *, cursor=None):
+    """Execute an SQL query and fetch one result."""
+    if cursor:
+        cursor.execute(sql, params)
+        return cursor.fetchone()
+
+    with get_connection() as conn:
+        with conn.cursor() as cursor:
+            cursor.execute(sql, params)
+            return cursor.fetchone()
+
+
+def _execute_sql_fetch_all(sql: str, params: tuple, *, cursor=None):
+    """Execute an SQL query and fetch all results."""
+    if cursor:
+        cursor.execute(sql, params)
+        return cursor.fetchall()
+
+    with get_connection() as conn:
+        with conn.cursor() as cursor:
+            cursor.execute(sql, params)
+            return cursor.fetchall()
+
+
+def _batch_execute_sql_fetch_all(sql: str, params: list, *, cursor=None, returning=True):
+    """Execute multiple SQL queries in a batch and fetch all results."""
+    if cursor:
+        cursor.executemany(sql, params, returning=returning)
+        rows = []
+        row_count = cursor.rowcount
+        if row_count > 0 and returning:
+            while True:
+                rows.append(cursor.fetchone())
+                if not cursor.nextset():
+                    break
+        return rows
+
+    with get_connection() as conn:
+        with conn.cursor() as cursor:
+            cursor.executemany(sql, params, returning=returning)
+            rows = []
+            row_count = cursor.rowcount
+            if row_count > 0 and returning:
+                while True:
+                    rows.append(cursor.fetchone())
+                    if not cursor.nextset():
+                        break
+            return rows
