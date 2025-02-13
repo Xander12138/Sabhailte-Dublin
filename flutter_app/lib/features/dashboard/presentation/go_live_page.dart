@@ -39,7 +39,7 @@ class _GoLivePageState extends State<GoLivePage> {
       };
 
       final response = await http.post(
-        Uri.parse(' https://0c8f-134-226-213-134.ngrok-free.app/api/disasters'),
+        Uri.parse('http://170.106.106.90:8001/news'),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode(requestBody),
       );
