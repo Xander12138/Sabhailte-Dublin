@@ -25,7 +25,7 @@ class _NewsPageState extends State<NewsPage> {
 
   Future<void> fetchNews() async {
     try {
-      final response = await http.get(Uri.parse('http://0.0.0.0:8000/api/disasters'));
+      final response = await http.get(Uri.parse('http://170.106.106.90:8001/news'));
       if (response.statusCode == 200) {
         final Map<String, dynamic> responseData = jsonDecode(response.body);
         final List<dynamic> newsData = responseData['disasters'] ?? [];
