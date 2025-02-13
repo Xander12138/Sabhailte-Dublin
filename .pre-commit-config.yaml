@@ -56,3 +56,11 @@ repos:
     rev: v0.1.9
     hooks:
       - id: ruff
+  - repo: local
+    hooks:
+      - id: run-tests
+        name: Run pytest tests
+        entry: pytest
+        args: ["./backend/tests"]
+        language: system
+        pass_filenames: false
