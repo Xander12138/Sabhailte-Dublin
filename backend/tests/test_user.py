@@ -1,12 +1,5 @@
-# import os
-# import sys
-
-# # print("aaaaaaaaaaaaaaaaaaaaaa: ", os.getcwd())
-
 # import pytest
 # from unittest.mock import MagicMock
-
-# sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), '../src')))
 
 # from src.users_handler import add_user_to_db, get_user_by_id, update_user, delete_user
 # from src.utils.db_utils import _generate_id
