@@ -96,7 +96,7 @@ def read_db():
 def add_disaster(data: Disaster):
     try:
         # Store the disaster data in the PostgreSQL database
-        inserted_id = db_utils.add_disaster_to_db(data.title, data.description, data.time, data.location)
+        inserted_id = db_utils.add_news_to_db(data.title, data.description, data.time, data.location)
         return {'message': 'Disaster added successfully', 'id': inserted_id}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f'An error occurred: {e}')
@@ -106,7 +106,7 @@ def add_disaster(data: Disaster):
 def get_disasters():
     try:
         # Retrieve all disasters from the PostgreSQL database
-        disasters = db_utils.get_all_disasters()
+        disasters = db_utils.get_news_list()
         if not disasters:
             raise HTTPException(status_code=404, detail='No disaster data found.')
         return {'disasters': disasters}

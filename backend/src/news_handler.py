@@ -6,5 +6,5 @@ def create_news():
 
 
 def get_news_list():
-    db_utils.get_all_disasters()
-    return db_utils.get_all_disasters()
+    db_utils.get_news_list()
+    return db_utils.get_news_list()

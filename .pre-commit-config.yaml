@@ -60,7 +60,9 @@ repos:
     hooks:
       - id: run-tests
         name: Run pytest tests
-        entry: pytest
-        args: ["./backend/tests"]
+        entry: bash
+        args:
+          - -c
+          - "export PYTHONPATH=$(pwd)/backend && pytest ./backend/tests"
         language: system
         pass_filenames: false
