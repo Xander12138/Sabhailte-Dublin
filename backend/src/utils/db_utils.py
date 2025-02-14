@@ -3,7 +3,6 @@ import uuid
 from datetime import datetime, timezone
 
 import psycopg2
-from psycopg2.extras import RealDictCursor
 
 
 class DB:
@@ -28,29 +27,6 @@ def get_connection():
     )
 
 
-def add_disaster_to_db(title, description, time, location):
-    """Add a disaster to the database."""
-    with get_connection() as conn:
-        with conn.cursor() as cur:
-            cur.execute(
-                """
-                INSERT INTO disasters (title, description, time, location)
-                VALUES (%s, %s, %s, %s)
-                RETURNING id;
-                """,
-                (title, description, time, location),
-            )
-            return cur.fetchone()[0]
-
-
-def get_all_disasters():
-    """Retrieve all disasters from the database."""
-    with get_connection() as conn:
-        with conn.cursor(cursor_factory=RealDictCursor) as cur:
-            cur.execute('SELECT * FROM disasters;')
-            return cur.fetchall()
-
-
 def _generate_id(type):
     """Generate a unique ID with a prefix."""
     prefixes = {
@@ -69,7 +45,7 @@ def _current_utc_time():
     return datetime.now(timezone.utc)
 
 
-def execute_multiple_sqls(sql_params_list: list):
+def _execute_multiple_sqls(sql_params_list: list):
     """Execute multiple SQL statements in a single transaction.
 
     Args:
@@ -134,3 +110,20 @@ def _batch_execute_sql_fetch_all(sql: str, params: list, *, cursor=None, returni
                     if not cursor.nextset():
                         break
             return rows
+
+
+def add_news_to_db(title, description, time, location):
+    """Add a disaster to the database."""
+    return _execute_sql_fetch_one(
+        """
+        INSERT INTO disasters (title, description, time, location)
+        VALUES (%s, %s, %s, %s)
+        RETURNING id;
+        """,
+        (title, description, time, location),
+    )[0]
+
+
+def get_news_list():
+    """Retrieve all disasters from the database."""
+    return _execute_sql_fetch_all('SELECT * FROM disasters', ())
