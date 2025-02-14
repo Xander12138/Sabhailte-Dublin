@@ -113,17 +113,19 @@ def _batch_execute_sql_fetch_all(sql: str, params: list, *, cursor=None, returni
 
 
 def add_news_to_db(title, description, time, location):
-    """Add a disaster to the database."""
+    """Add a news entry to the database with a generated ID."""
+    news_id = _generate_id('news')  # Generate a unique ID using _generate_id
+
     return _execute_sql_fetch_one(
         """
-        INSERT INTO disasters (title, description, time, location)
-        VALUES (%s, %s, %s, %s)
-        RETURNING id;
+        INSERT INTO news (news_id, title, description, time, location)
+        VALUES (%s, %s, %s, %s, %s)
+        RETURNING news_id;
         """,
-        (title, description, time, location),
+        (news_id, title, description, time, location),
     )[0]
 
 
 def get_news_list():
     """Retrieve all disasters from the database."""
-    return _execute_sql_fetch_all('SELECT * FROM disasters', ())
+    return _execute_sql_fetch_all('SELECT * FROM news', ())
