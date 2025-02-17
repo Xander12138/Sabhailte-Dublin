@@ -1,44 +1,13 @@
-from typing import List
-
-import fastapi
-from fastapi import HTTPException, WebSocket, WebSocketDisconnect
+from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from src.router import news
-from src.utils import db_utils
+from src.news_handler import add_news_to_db
+from src.news_handler import delete_news as delete_news_in_db
+from src.news_handler import get_news_by_id
+from src.news_handler import update_news as update_news_in_db
+from src.utils.db_utils import get_connection
 
-app = fastapi.FastAPI()
-
-# @router.middleware('http')
-# async def auth_middleware(request, call_next):
-#     whitelist = ('/auth', '/connect', '/disconnect', '/message')
-#     if not request.url.path.startswith(whitelist):
-#         no_auth_response = PlainTextResponse(content='Unauthorized', status_code=401)
-#         no_auth_response.headers['WWW-Authenticate'] = 'Basic'
-
-#         auth_header = request.headers.get('Authorization')
-#         if not auth_header:
-#             return no_auth_response
-
-#         scheme, credentials = auth_header.split()
-#         decoded = base64.b64decode(credentials).decode('ascii')
-#         username, password = decoded.split(':')
-#         if username != 'ase' or password != 'ase':
-#             return no_auth_response
-
-#     body = await request.body()
-#     try:
-#         return await call_next(request)
-#     except fastapi.HTTPException as http_e:
-#         return _text_response_from_exception(http_e.status_code, http_e)
-#     except Exception as e:
-#         logging.error('Internal error on request: %s?%s %s', request.url.path, request.query_params, body)
-#         logging.exception('Exception')
-#         return _text_response_from_exception(500, e)
-
-# def _text_response_from_exception(status_code, exc):
-#     text = ''.join(traceback.format_exception(type(exc), exc, exc.__traceback__))
-#     return plaintextresponse(status_code=status_code, content=text)
+app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
@@ -48,98 +17,90 @@ app.add_middleware(
     allow_headers=['*'],
 )
 
+# ------------------ NEWS ENDPOINTS ------------------ #
 
-# Pydantic model for disaster data
-class Disaster(BaseModel):
+
+# Pydantic models for news creation and update
+class NewsCreate(BaseModel):
+    author_id: int
+    cover_link: str
     title: str
-    description: str
-    time: str
+    subtitle: str
     location: str
+    views: int = 0
 
 
-# Class to manage WebSocket connections
-class ConnectionManager:
-
-    def __init__(self):
-        self.active_connections: List[WebSocket] = []
-
-    async def connect(self, websocket: WebSocket):
-        await websocket.accept()
-        self.active_connections.append(websocket)
-
-    def disconnect(self, websocket: WebSocket):
-        self.active_connections.remove(websocket)
-
-    async def broadcast(self, message: bytes):
-        for connection in self.active_connections:
-            try:
-                await connection.send_bytes(message)
-            except WebSocketDisconnect:
-                self.disconnect(connection)
+class NewsUpdate(BaseModel):
+    cover_link: str
+    title: str
+    subtitle: str
+    location: str
+    views: int
 
 
-manager = ConnectionManager()
-
-
-@app.get('/')
-def read_root():
-    return {'message': 'Welcome to the FastAPI Backend!'}
-
-
-@app.get('/db')
-def read_db():
-    db_version = db_utils.get_version()
-    return {'db_version': db_version}
-
-
-@app.post('/api/disasters')
-def add_disaster(data: Disaster):
+@app.post('/news')
+def create_news(news: NewsCreate):
     try:
-        # Store the disaster data in the PostgreSQL database
-        inserted_id = db_utils.add_news_to_db(data.title, data.description, data.time, data.location)
-        return {'message': 'Disaster added successfully', 'id': inserted_id}
+        new_id = add_news_to_db(
+            news.author_id,
+            news.cover_link,
+            news.title,
+            news.subtitle,
+            news.location,
+            news.views,
+        )
+        return {'message': 'News added successfully', 'news_id': new_id}
     except Exception as e:
-        raise HTTPException(status_code=500, detail=f'An error occurred: {e}')
-
-
-@app.get('/api/disasters')
-def get_disasters():
-    try:
-        # Retrieve all disasters from the PostgreSQL database
-        disasters = db_utils.get_news_list()
-        if not disasters:
-            raise HTTPException(status_code=404, detail='No disaster data found.')
-        return {'disasters': disasters}
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=f'An error occurred: {e}')
-
-
-# WebSocket endpoint for live streaming
-@app.websocket('/ws/stream')
-async def stream_endpoint(websocket: WebSocket):
-    await manager.connect(websocket)
-    try:
-        while True:
-            # Receive binary data (video frames) from the streamer
-            data = await websocket.receive_bytes()
-            # Broadcast the data to all connected viewers
-            await manager.broadcast(data)
-    except WebSocketDisconnect:
-        manager.disconnect(websocket)
-    except Exception as e:
-        print(f'WebSocket error: {e}')
+        raise HTTPException(status_code=500, detail=f'Error adding news: {e}')
 
 
 @app.get('/news')
-def get_news_list():
-    return news.News.getAll()
+def list_news():
+    try:
+        with get_connection() as conn:
+            with conn.cursor() as cur:
+                cur.execute('SELECT * FROM news;')
+                rows = cur.fetchall()
+                return {'news': rows}
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f'Error fetching news: {e}')
 
 
-@app.get('/news/{_id}')
-def get_news(_id: int):
-    return news.News.getOne(_id)
+@app.get('/news/{news_id}')
+def read_news(news_id: int):
+    try:
+        news_item = get_news_by_id(news_id)
+        return news_item
+    except ValueError as ve:
+        raise HTTPException(status_code=404, detail=str(ve))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f'Error retrieving news: {e}')
 
 
-@app.delete('/news/{_id}')
-def delete_news(_id: int):
-    return news.News.delete(_id)
+@app.put('/news/{news_id}')
+def update_news(news_id: int, news: NewsUpdate):
+    try:
+        updated = update_news_in_db(
+            news_id,
+            news.cover_link,
+            news.title,
+            news.subtitle,
+            news.location,
+            news.views,
+        )
+        return {'message': 'News updated successfully', 'news': updated}
+    except ValueError as ve:
+        raise HTTPException(status_code=404, detail=str(ve))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f'Error updating news: {e}')
+
+
+@app.delete('/news/{news_id}')
+def delete_news(news_id: int):
+    try:
+        result = delete_news_in_db(news_id)
+        return result
+    except ValueError as ve:
+        raise HTTPException(status_code=404, detail=str(ve))
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=f'Error deleting news: {e}')

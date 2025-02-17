@@ -25,20 +25,26 @@ class _NewsPageState extends State<NewsPage> {
 
   Future<void> fetchNews() async {
     try {
-      final response = await http.get(Uri.parse('http://170.106.106.90:8001/news'));
+      final response =
+          await http.get(Uri.parse('http://170.106.106.90:8001/news'));
       if (response.statusCode == 200) {
-        final Map<String, dynamic> responseData = jsonDecode(response.body);
-        final List<dynamic> newsData = responseData['disasters'] ?? [];
+        // Decode response as a List since your API returns a JSON array.
+        final List<dynamic> newsData = jsonDecode(response.body) as List;
         final List<Map<String, dynamic>> fetchedNews = newsData.map((news) {
+          // Check for cover_link existence and non-empty value.
+          final String? coverLink = news["cover_link"] as String?;
+          final imageUrl = (coverLink != null && coverLink.trim().isNotEmpty)
+              ? coverLink
+              : randomImages[Random().nextInt(randomImages.length)];
           return {
-            "title": news["title"] ?? "No Title",
-            "description": news["description"] ?? "No Description Available",
-            "time": news["time"] ?? "Unknown Time",
+            "title": news["title1"] ?? "No Title",
+            "description": news["title2"] ?? "No Description Available",
+            "time": news["date"] ?? "Unknown Date",
             "location": news["location"] ?? "Unknown Location",
-            "image": news["image"] ?? randomImages[Random().nextInt(randomImages.length)],
+            "image": imageUrl,
             "views": news["views"]?.toString() ?? "0",
-            "comments": news["comments"]?.toString() ?? "0",
-            "likes": news["likes"]?.toString() ?? "0",
+            "comments": "0",
+            "likes": "0",
           };
         }).toList();
 
@@ -93,7 +99,7 @@ class _NewsPageState extends State<NewsPage> {
     );
   }
 
-  // Widget to Build Each News Item
+  // Widget to build each news card
   Widget _buildNewsCard(BuildContext context, Map<String, dynamic> news) {
     return Card(
       color: Colors.grey[900],
@@ -101,7 +107,7 @@ class _NewsPageState extends State<NewsPage> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // Image with Fallback
+          // News image with fallback
           AspectRatio(
             aspectRatio: 16 / 9,
             child: Image.network(
@@ -148,14 +154,17 @@ class _NewsPageState extends State<NewsPage> {
                 // Metadata (time, location, views, comments, likes)
                 Row(
                   children: [
-                    Text(
-                      "${news["time"]} · ${news["location"]}",
-                      style: TextStyle(
-                        color: Colors.grey[500],
-                        fontSize: 12,
+                    Expanded(
+                      child: Text(
+                        "${news["time"]} · ${news["location"]}",
+                        style: TextStyle(
+                          color: Colors.grey[500],
+                          fontSize: 12,
+                        ),
+                        maxLines: 1,
+                        overflow: TextOverflow.ellipsis,
                       ),
                     ),
-                    Spacer(),
                     Icon(Icons.visibility, size: 16, color: Colors.grey[500]),
                     SizedBox(width: 4),
                     Text(
