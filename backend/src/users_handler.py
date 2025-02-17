@@ -1,13 +1,13 @@
 # import uuid
 
-from src.utils.db_utils import _generate_id, get_connection
+from src.utils.db_utils import _generate_id, _get_connection
 
 
 def add_user_to_db(username, email):
     """Add a new user to the database."""
     try:
         user_id = _generate_id('user')  # Generate a unique user ID
-        with get_connection() as conn:
+        with _get_connection() as conn:
             with conn.cursor() as cur:
                 cur.execute(
                     """
@@ -26,7 +26,7 @@ def add_user_to_db(username, email):
 def get_user_by_id(user_id):
     """Retrieve a user by their user_id."""
     try:
-        with get_connection() as conn:
+        with _get_connection() as conn:
             with conn.cursor() as cur:
                 cur.execute('SELECT * FROM users WHERE user_id = %s;', (user_id,))
                 user = cur.fetchone()
@@ -41,7 +41,7 @@ def get_user_by_id(user_id):
 def update_user(user_id, username, email):
     """Update the username and email for an existing user."""
     try:
-        with get_connection() as conn:
+        with _get_connection() as conn:
             with conn.cursor() as cur:
                 cur.execute(
                     """
@@ -64,7 +64,7 @@ def update_user(user_id, username, email):
 def delete_user(user_id):
     """Delete a user from the database."""
     try:
-        with get_connection() as conn:
+        with _get_connection() as conn:
             with conn.cursor() as cur:
                 cur.execute('DELETE FROM users WHERE user_id = %s;', (user_id,))
                 if cur.rowcount == 0:
