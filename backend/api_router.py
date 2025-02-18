@@ -13,6 +13,37 @@ app.add_middleware(
     allow_headers=['*'],
 )
 
+# @router.middleware('http')
+# async def auth_middleware(request, call_next):
+#     whitelist = ('/auth', '/connect', '/disconnect', '/message')
+#     if not request.url.path.startswith(whitelist):
+#         no_auth_response = PlainTextResponse(content='Unauthorized', status_code=401)
+#         no_auth_response.headers['WWW-Authenticate'] = 'Basic'
+
+#         auth_header = request.headers.get('Authorization')
+#         if not auth_header:
+#             return no_auth_response
+
+#         scheme, credentials = auth_header.split()
+#         decoded = base64.b64decode(credentials).decode('ascii')
+#         username, password = decoded.split(':')
+#         if username != 'ase' or password != 'ase':
+#             return no_auth_response
+
+#     body = await request.body()
+#     try:
+#         return await call_next(request)
+#     except fastapi.HTTPException as http_e:
+#         return _text_response_from_exception(http_e.status_code, http_e)
+#     except Exception as e:
+#         logging.error('Internal error on request: %s?%s %s', request.url.path, request.query_params, body)
+#         logging.exception('Exception')
+#         return _text_response_from_exception(500, e)
+
+# def _text_response_from_exception(status_code, exc):
+#     text = ''.join(traceback.format_exception(type(exc), exc, exc.__traceback__))
+#     return plaintextresponse(status_code=status_code, content=text)
+
 # ------------------ NEWS ENDPOINTS ------------------ #
 
 
