@@ -1,6 +1,7 @@
 absl-py
 fastapi
 pandas
+psycopg2
 psycopg2-binary
 pytest
 python-dotenv
