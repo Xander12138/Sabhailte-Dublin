@@ -21,7 +21,7 @@ CREATE TABLE news (
     title VARCHAR(255) NOT NULL,
     subtitle VARCHAR(255),
     published_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP NOT NULL,
-    location GEOGRAPHY(POINT, 4326) NOT NULL,
+    location VARCHAR(100) NOT NULL,
     views INT DEFAULT 0 CHECK (views >= 0),
     CONSTRAINT fk_news_author FOREIGN KEY (author_id) REFERENCES users(user_id) ON DELETE CASCADE
 );

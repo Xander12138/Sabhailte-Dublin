@@ -1,6 +1,8 @@
 absl-py
 fastapi
+pandas
 psycopg2-binary
+pytest
 python-dotenv
 uvicorn
 uvicorn[standard]
