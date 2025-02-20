@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
-import 'dart:math';
+import 'dart:typed_data';
 
 class NewsPage extends StatefulWidget {
   @override
@@ -10,12 +10,6 @@ class NewsPage extends StatefulWidget {
 
 class _NewsPageState extends State<NewsPage> {
   List<Map<String, dynamic>> newsItems = [];
-
-  final List<String> randomImages = [
-    "https://images.unsplash.com/photo-1517248135467-4c7edcad34c4?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=400",
-    "https://images.unsplash.com/photo-1517976487492-5750f3195933?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=400",
-    "https://images.unsplash.com/photo-1593642532973-d31b6557fa68?crop=entropy&cs=tinysrgb&fit=max&fm=jpg&q=80&w=400",
-  ];
 
   @override
   void initState() {
@@ -26,23 +20,23 @@ class _NewsPageState extends State<NewsPage> {
   Future<void> fetchNews() async {
     try {
       final response =
-          await http.get(Uri.parse('http://170.106.106.90:8001/news'));
+          await http.get(Uri.parse('http://127.0.0.1:8001/news'));
       if (response.statusCode == 200) {
-        // Decode response as a List since your API returns a JSON array.
-        final List<dynamic> newsData = jsonDecode(response.body) as List;
+        // Decode response as a Map
+        final Map<String, dynamic> data = jsonDecode(response.body);
+        final List<dynamic> newsData = data["news"]; // Extract the "news" array
         final List<Map<String, dynamic>> fetchedNews = newsData.map((news) {
-          // Check for cover_link existence and non-empty value.
-          final String? coverLink = news["cover_link"] as String?;
-          final imageUrl = (coverLink != null && coverLink.trim().isNotEmpty)
-              ? coverLink
-              : randomImages[Random().nextInt(randomImages.length)];
+          // Parse the JSON string for coordinates
+          final locationData = jsonDecode(news[6]) as Map<String, dynamic>;
           return {
-            "title": news["title1"] ?? "No Title",
-            "description": news["title2"] ?? "No Description Available",
-            "time": news["date"] ?? "Unknown Date",
-            "location": news["location"] ?? "Unknown Location",
-            "image": imageUrl,
-            "views": news["views"]?.toString() ?? "0",
+            "id": news[0],
+            "author": news[1],
+            "imageBase64": news[2], // Base64 image data
+            "title": news[3],
+            "description": news[4],
+            "time": news[5],
+            "location": "Lat: ${locationData['latitude']}, Lon: ${locationData['longitude']}",
+            "views": news[7]?.toString() ?? "0",
             "comments": "0",
             "likes": "0",
           };
@@ -110,20 +104,7 @@ class _NewsPageState extends State<NewsPage> {
           // News image with fallback
           AspectRatio(
             aspectRatio: 16 / 9,
-            child: Image.network(
-              news["image"],
-              fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) {
-                return Container(
-                  color: Colors.grey,
-                  child: Icon(
-                    Icons.broken_image,
-                    color: Colors.white,
-                    size: 50,
-                  ),
-                );
-              },
-            ),
+            child: _buildImageFromBase64(news["imageBase64"]),
           ),
           Padding(
             padding: const EdgeInsets.all(12.0),
@@ -202,5 +183,45 @@ class _NewsPageState extends State<NewsPage> {
         ],
       ),
     );
+  }
+
+  // Build image from Base64 string
+  Widget _buildImageFromBase64(String base64String) {
+    try {
+      // check and remove Base64 prefix
+      if (base64String.startsWith('data:image')) {
+        final splitData = base64String.split(',');
+        if (splitData.length == 2) {
+          base64String = splitData[1];
+        }
+      }
+
+      // decode Base64 data
+      Uint8List imageBytes = base64Decode(base64String);
+      return Image.memory(
+        imageBytes,
+        fit: BoxFit.cover,
+        errorBuilder: (context, error, stackTrace) {
+          return Container(
+            color: Colors.grey,
+            child: Icon(
+              Icons.broken_image,
+              color: Colors.white,
+              size: 50,
+            ),
+          );
+        },
+      );
+    } catch (e) {
+      print("Error decoding Base64 image: $e");
+      return Container(
+        color: Colors.grey,
+        child: Icon(
+          Icons.broken_image,
+          color: Colors.white,
+          size: 50,
+        ),
+      );
+    }
   }
 }
