@@ -5,18 +5,7 @@ from datetime import datetime, timezone
 import psycopg2
 
 
-class DB:
-    """Database connection handler."""
-    conn = psycopg2.connect(
-        dbname=os.getenv('POSTGRES_DB'),
-        user=os.getenv('POSTGRES_USER'),
-        password=os.getenv('POSTGRES_PASSWORD'),
-        host=os.getenv('POSTGRES_HOST'),
-        port=os.getenv('POSTGRES_PORT'),
-    )
-
-
-def get_connection():
+def _get_connection():
     """Establish a connection to the database."""
     return psycopg2.connect(
         dbname=os.getenv('POSTGRES_DB'),
@@ -27,10 +16,11 @@ def get_connection():
     )
 
 
+# This will return "user_{UUID}" or "news_{UUID}" depending on type.
 def _generate_id(type):
     """Generate a unique ID with a prefix."""
     prefixes = {
-        'user': 'u_',
+        'user': 'user_',
         'news': 'news_',
     }
 
@@ -53,7 +43,7 @@ def _execute_multiple_sqls(sql_params_list: list):
         Example: [(sql, params), (sql, params), ...]
     """
     results = []
-    with get_connection() as conn:
+    with _get_connection() as conn:
         with conn.cursor() as cursor:
             for sql, params in sql_params_list:
                 cursor.execute(sql, params)
@@ -68,7 +58,7 @@ def _execute_sql_fetch_one(sql: str, params: tuple, *, cursor=None):
         cursor.execute(sql, params)
         return cursor.fetchone()
 
-    with get_connection() as conn:
+    with _get_connection() as conn:
         with conn.cursor() as cursor:
             cursor.execute(sql, params)
             return cursor.fetchone()
@@ -80,7 +70,7 @@ def _execute_sql_fetch_all(sql: str, params: tuple, *, cursor=None):
         cursor.execute(sql, params)
         return cursor.fetchall()
 
-    with get_connection() as conn:
+    with _get_connection() as conn:
         with conn.cursor() as cursor:
             cursor.execute(sql, params)
             return cursor.fetchall()
@@ -99,7 +89,7 @@ def _batch_execute_sql_fetch_all(sql: str, params: list, *, cursor=None, returni
                     break
         return rows
 
-    with get_connection() as conn:
+    with _get_connection() as conn:
         with conn.cursor() as cursor:
             cursor.executemany(sql, params, returning=returning)
             rows = []
@@ -112,20 +102,69 @@ def _batch_execute_sql_fetch_all(sql: str, params: list, *, cursor=None, returni
             return rows
 
 
-def add_news_to_db(title, description, time, location):
+def add_news_to_db(author_id, cover_link, title, subtitle, location, views=0):
     """Add a news entry to the database with a generated ID."""
-    news_id = _generate_id('news')  # Generate a unique ID using _generate_id
-
-    return _execute_sql_fetch_one(
+    try:
+        news_id = _generate_id('news')
+        sql = """
+            INSERT INTO news (news_id, author_id, cover_link, title, subtitle, location, views)
+            VALUES (%s, %s, %s, %s, %s, %s, %s)
+            RETURNING news_id;
         """
-        INSERT INTO news (news_id, title, description, time, location)
-        VALUES (%s, %s, %s, %s, %s)
-        RETURNING news_id;
-        """,
-        (news_id, title, description, time, location),
-    )[0]
+        result = _execute_sql_fetch_one(sql, (news_id, author_id, cover_link, title, subtitle, location, views))
+        return result[0] if result else None
+    except Exception as e:
+        raise Exception(f'Error adding news to the database: {e}')
 
 
 def get_news_list():
-    """Retrieve all disasters from the database."""
-    return _execute_sql_fetch_all('SELECT * FROM news', ())
+    """Retrieve a list of all news entries using helper functions."""
+    sql = 'SELECT * FROM news;'
+    try:
+        news_list = _execute_sql_fetch_all(sql, ())
+        return news_list
+    except Exception as e:
+        raise Exception(f'Error retrieving news list: {e}')
+
+
+def get_news_by_id(news_id):
+    """Retrieve a news entry by its news_id using helper functions."""
+    sql = 'SELECT * FROM news WHERE news_id = %s;'
+    try:
+        result = _execute_sql_fetch_one(sql, (news_id,))
+        if result:
+            return result
+        else:
+            raise ValueError(f'News with news_id{news_id} not found')
+    except Exception as e:
+        raise Exception(f'Error retrieving news with news_id{news_id}: {e}')
+
+
+def update_news(news_id, cover_link, title, subtitle, location, views):
+    """Update the details of an existing news entry using a helper function."""
+    sql = """
+        UPDATE news
+        SET cover_link = %s, title = %s, subtitle = %s, location = %s, views = %s
+        WHERE news_id = %s
+        RETURNING news_id, cover_link, title, subtitle, location, views;
+    """
+    try:
+        updated_news = _execute_sql_fetch_one(sql, (cover_link, title, subtitle, location, views, news_id))
+        if updated_news:
+            return updated_news
+        else:
+            raise ValueError(f'News with news_id {news_id} not found.')
+    except Exception as e:
+        raise Exception(f'Error updating news with news_id {news_id}: {e}')
+
+
+def delete_news(news_id):
+    """Delete a news entry from the database using a helper function."""
+    sql = 'DELETE FROM news WHERE news_id = %s RETURNING news_id;'
+    try:
+        deleted = _execute_sql_fetch_one(sql, (news_id,))
+        if not deleted:
+            raise ValueError(f'News with news_id {news_id} not found.')
+        return {'message': f'News with news_id {news_id} successfully deleted.'}
+    except Exception as e:
+        raise Exception(f'Error deleting news with news_id {news_id}: {e}')
