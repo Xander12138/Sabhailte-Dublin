@@ -102,6 +102,9 @@ def _batch_execute_sql_fetch_all(sql: str, params: list, *, cursor=None, returni
             return rows
 
 
+# NEWS FUNCTIONS
+
+
 def add_news_to_db(author_id, cover_link, title, subtitle, location, views=0):
     """Add a news entry to the database with a generated ID."""
     try:
@@ -168,3 +171,69 @@ def delete_news(news_id):
         return {'message': f'News with news_id {news_id} successfully deleted.'}
     except Exception as e:
         raise Exception(f'Error deleting news with news_id {news_id}: {e}')
+
+
+# USER FUNCTIONS
+
+
+def add_user_to_db(username, email, password_hash, full_name):
+    """Add a user entry to the database with a generated ID."""
+    try:
+        user_id = _generate_id('user')
+        sql = """
+            INSERT INTO users (user_id, username, email, password_hash, full_name)
+            VALUES (%s, %s, %s, %s, %s)
+            RETURNING user_id;
+        """
+        result = _execute_sql_fetch_one(sql, (user_id, username, email, password_hash, full_name))
+        return result[0] if result else None
+    except Exception as e:
+        raise Exception(f'Error adding user to the database: {e}')
+
+
+def get_user_by_id(user_id):
+    """Retrieve a user by their user_id."""
+    sql = 'SELECT * FROM users WHERE user_id = %s;'
+    try:
+        return _execute_sql_fetch_one(sql, (user_id,))
+    except Exception as e:
+        raise Exception(f'Error retrieving user with user_id {user_id}: {e}')
+
+
+def get_all_users():
+    """Retrieve all users from the database."""
+    sql = 'SELECT * FROM users;'
+    try:
+        return _execute_sql_fetch_all(sql, ())
+    except Exception as e:
+        raise Exception(f'Error retrieving users: {e}')
+
+
+def update_user(user_id, username, email, password_hash, full_name):
+    """Update user details."""
+    sql = """
+        UPDATE users
+        SET username = %s, email = %s, password_hash = %s, full_name = %s
+        WHERE user_id = %s
+        RETURNING user_id, username, email, full_name;
+    """
+    try:
+        updated_user = _execute_sql_fetch_one(sql, (username, email, password_hash, full_name, user_id))
+        if updated_user:
+            return updated_user
+        else:
+            raise ValueError(f'User with user_id {user_id} not found.')
+    except Exception as e:
+        raise Exception(f'Error updating user with user_id {user_id}: {e}')
+
+
+def delete_user(user_id):
+    """Delete a user from the database."""
+    sql = 'DELETE FROM users WHERE user_id = %s RETURNING user_id;'
+    try:
+        deleted = _execute_sql_fetch_one(sql, (user_id,))
+        if not deleted:
+            raise ValueError(f'User with user_id {user_id} not found.')
+        return {'message': f'User with user_id {user_id} successfully deleted.'}
+    except Exception as e:
+        raise Exception(f'Error deleting user with user_id {user_id}: {e}')
