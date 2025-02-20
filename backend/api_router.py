@@ -1,6 +1,7 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
+from src.data_models import NewsCreate, NewsUpdate
 from src.map_handler import get_evacuate_map
 from src.news_handler import create_news, delete_news, get_news, get_news_list, update_news
 
@@ -46,24 +47,6 @@ app.add_middleware(
 #     return plaintextresponse(status_code=status_code, content=text)
 
 # ------------------ NEWS ENDPOINTS ------------------ #
-
-
-# Pydantic models for news creation and update
-class NewsCreate(BaseModel):
-    author_id: int
-    cover_link: str
-    title: str
-    subtitle: str
-    location: str
-    views: int = 0
-
-
-class NewsUpdate(BaseModel):
-    cover_link: str
-    title: str
-    subtitle: str
-    location: str
-    views: int
 
 
 @app.post('/news')
