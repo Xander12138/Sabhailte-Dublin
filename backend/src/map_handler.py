@@ -1,25 +1,23 @@
-import requests
 import flexpolyline as fp
+import requests
+
 
 def fetch_route_from_api():
-    """
-    Fetches the route from the HERE API.
-
-    """
-    api_key = "efP5oq-GUgwgXfK1Zg86eS8wH0nVWc_dYBYzFBJS7eY"
+    """Fetches the route from the HERE API."""
+    api_key = 'efP5oq-GUgwgXfK1Zg86eS8wH0nVWc_dYBYzFBJS7eY'
 
     # Parameters for API request
-    origin = "53.3441,-6.2573"
-    destination = "53.3430,-6.2672"
-    avoid_areas = "bbox:-6.2700,53.3420,-6.2500,53.3460"
-    url = "https://router.hereapi.com/v8/routes"
+    origin = '53.3441,-6.2573'
+    destination = '53.3430,-6.2672'
+    avoid_areas = 'bbox:-6.2700,53.3420,-6.2500,53.3460'
+    url = 'https://router.hereapi.com/v8/routes'
     params = {
-        "origin": origin,
-        "destination": destination,
-        "transportMode": "car",
-        "avoid[areas]": avoid_areas,
-        "return": "polyline",
-        "apiKey": api_key
+        'origin': origin,
+        'destination': destination,
+        'transportMode': 'car',
+        'avoid[areas]': avoid_areas,
+        'return': 'polyline',
+        'apiKey': api_key
     }
 
     # 发送 GET 请求
@@ -36,8 +34,7 @@ def fetch_route_from_api():
 
 
 def get_evacuate_map():
-    """
-    Generates the evacuation map with route and restricted areas.
+    """Generates the evacuation map with route and restricted areas.
 
     :return: A dictionary containing 'route_map' and 'restrict_areas'.
     """
@@ -51,8 +48,4 @@ def get_evacuate_map():
         (53.3460, -6.2700),  # Back to starting point
     ]
 
-    return {
-        'route_map': fetch_route_from_api(),
-        'restrict_areas': mock_restrict_areas
-    }
-
+    return {'route_map': fetch_route_from_api(), 'restrict_areas': mock_restrict_areas}
