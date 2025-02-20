@@ -1,7 +1,6 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
-from src.map_handler import get_evacuate_map
 from src.news_handler import create_news, delete_news, get_news, get_news_list, update_news
 
 app = FastAPI()
@@ -100,11 +99,6 @@ def api_read_news(news_id: int):
         raise HTTPException(status_code=404, detail=str(ve))
     except Exception as e:
         raise HTTPException(status_code=500, detail=f'Error retrieving news: {e}')
-
-
-@app.get('/route-map')
-def get_route_map():
-    return get_evacuate_map()
 
 
 @app.put('/news/{news_id}')
