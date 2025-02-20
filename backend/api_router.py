@@ -6,6 +6,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from src.router import news
 from src.utils import db_utils
+from src.map_handler import get_evacuate_map
 
 app = fastapi.FastAPI()
 
@@ -143,3 +144,7 @@ def get_news(_id: int):
 @app.delete('/news/{_id}')
 def delete_news(_id: int):
     return news.News.delete(_id)
+
+@app.get('/route_map')
+def get_route_map():
+    return get_evacuate_map()
