@@ -1,10 +1,12 @@
+import os
+
 import flexpolyline as fp
 import requests
 
 
 def fetch_route_from_api():
     """Fetches the route from the HERE API."""
-    api_key = 'efP5oq-GUgwgXfK1Zg86eS8wH0nVWc_dYBYzFBJS7eY'
+    API_KEY = os.getenv('API_KEY'),
 
     # Parameters for API request
     origin = '53.3441,-6.2573'
@@ -17,14 +19,13 @@ def fetch_route_from_api():
         'transportMode': 'car',
         'avoid[areas]': avoid_areas,
         'return': 'polyline',
-        'apiKey': api_key
+        'apiKey': API_KEY
     }
 
-    # 发送 GET 请求
+    # Send Get Request
     response = requests.get(url, params=params)
-    response.raise_for_status()  # 如果返回 HTTP 错误，抛出异常
+    response.raise_for_status()
 
-    # 解析 JSON 响应
     data = response.json()
     route_map = data['routes'][0]['sections'][0]['polyline']
     print('-->', route_map)
