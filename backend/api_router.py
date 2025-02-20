@@ -3,7 +3,7 @@ from typing import List
 import fastapi
 from fastapi import HTTPException, WebSocket, WebSocketDisconnect
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
+from src.data_models import Disaster
 from src.router import news
 from src.utils import db_utils
 
@@ -47,14 +47,6 @@ app.add_middleware(
     allow_methods=['*'],
     allow_headers=['*'],
 )
-
-
-# Pydantic model for disaster data
-class Disaster(BaseModel):
-    title: str
-    description: str
-    time: str
-    location: str
 
 
 # Class to manage WebSocket connections
