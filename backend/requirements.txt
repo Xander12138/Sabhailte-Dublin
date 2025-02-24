@@ -1,8 +1,9 @@
-absl-py
-fastapi
-pandas
-psycopg2-binary
-pytest
-python-dotenv
-uvicorn
-uvicorn[standard]
+absl-py==2.1.0
+aioboto3==13.4.0
+fastapi==0.115.8
+pandas==2.2.3
+pillow==11.1.0
+psycopg2-binary==2.9.10
+pytest==8.3.4
+python-dotenv==1.0.1
+uvicorn==0.34.0

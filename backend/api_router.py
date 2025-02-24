@@ -1,8 +1,7 @@
 from fastapi import FastAPI, HTTPException
 from fastapi.middleware.cors import CORSMiddleware
+from src import map_handler, news_handler
 from src.data_models import NewsCreate, NewsUpdate
-from src.map_handler import get_evacuate_map
-from src.news_handler import create_news, delete_news, get_news, get_news_list, update_news
 
 app = FastAPI()
 
@@ -51,7 +50,7 @@ app.add_middleware(
 @app.post('/news')
 def api_create_news(news: NewsCreate):
     try:
-        new_id = create_news(
+        new_id = news_handler.create_news(
             news.author_id,
             news.cover_link,
             news.title,
@@ -67,7 +66,7 @@ def api_create_news(news: NewsCreate):
 @app.get('/news')
 def api_list_news():
     try:
-        news_list = get_news_list()
+        news_list = news_handler.get_news_list()
         return {'news': news_list}
     except Exception as e:
         raise HTTPException(status_code=500, detail=f'Error fetching news: {e}')
@@ -76,7 +75,7 @@ def api_list_news():
 @app.get('/news/{news_id}')
 def api_read_news(news_id: int):
     try:
-        news_item = get_news(news_id)
+        news_item = news_handler.get_news(news_id)
         return news_item
     except ValueError as ve:
         raise HTTPException(status_code=404, detail=str(ve))
@@ -86,13 +85,13 @@ def api_read_news(news_id: int):
 
 @app.get('/route-map')
 def get_route_map():
-    return get_evacuate_map()
+    return map_handler.get_evacuate_map()
 
 
 @app.put('/news/{news_id}')
 def api_update_news(news_id: int, news: NewsUpdate):
     try:
-        updated = update_news(
+        updated = news_handler.update_news(
             news_id,
             news.cover_link,
             news.title,
@@ -110,7 +109,7 @@ def api_update_news(news_id: int, news: NewsUpdate):
 @app.delete('/news/{news_id}')
 def api_delete_news(news_id: int):
     try:
-        result = delete_news(news_id)
+        result = news_handler.delete_news(news_id)
         return result
     except ValueError as ve:
         raise HTTPException(status_code=404, detail=str(ve))
