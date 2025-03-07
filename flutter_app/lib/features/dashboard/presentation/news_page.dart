@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
 import 'dart:typed_data';
+import 'package:sabhailte_dubin/core/constant.dart';
 
 class NewsPage extends StatefulWidget {
   @override
@@ -20,7 +21,7 @@ class _NewsPageState extends State<NewsPage> {
   Future<void> fetchNews() async {
     try {
       final response =
-          await http.get(Uri.parse('http://127.0.0.1:8001/news'));
+          await http.get(Uri.parse('$BASE_URL/news'));
       if (response.statusCode == 200) {
         // Decode response as a Map
         final Map<String, dynamic> data = jsonDecode(response.body);

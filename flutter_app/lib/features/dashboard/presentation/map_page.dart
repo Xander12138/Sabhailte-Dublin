@@ -3,8 +3,12 @@ import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'dart:convert'; // For JSON decoding
 import 'package:http/http.dart' as http; // For HTTP requests
+import 'package:sabhailte_dubin/core/constant.dart';
+
 
 class MapPage extends StatefulWidget {
+  const MapPage({super.key});
+
   @override
   _MapPageState createState() => _MapPageState();
 }
@@ -28,7 +32,7 @@ class _MapPageState extends State<MapPage> {
   /// 1. Fetch route and restricted area data from the API
   Future<void> _fetchRouteAndRestrictedArea() async {
     try {
-      final response = await http.get(Uri.parse('http://127.0.0.1:8001/route_map'));
+      final response = await http.get(Uri.parse('$BASE_URL/route-map'));
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
 
@@ -93,8 +97,8 @@ class _MapPageState extends State<MapPage> {
                   polygons: [
                     Polygon(
                       points: restrictedArea,
-                      color: Colors.red.withOpacity(0.5),
-                      borderColor: Colors.red,
+                      color: Colors.red.withOpacity(0.8),  // Fills the area with semi-transparent red
+                      borderColor: Colors.red,            // Sets the border to red
                       borderStrokeWidth: 2.0,
                     ),
                   ],
