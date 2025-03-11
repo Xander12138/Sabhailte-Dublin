@@ -9,6 +9,7 @@ class Ultra911Page extends StatelessWidget {
       appBar: AppBar(
         backgroundColor: Colors.black,
         elevation: 0,
+        automaticallyImplyLeading: false,
         title: Text(
           'Ultra 911',
           style: TextStyle(color: Colors.yellow[700], fontSize: 24),

@@ -64,6 +64,7 @@ class _GoLivePageState extends State<GoLivePage> {
       backgroundColor: Colors.black,
       appBar: AppBar(
         backgroundColor: Colors.black,
+        automaticallyImplyLeading: false,
         title: Text('Report a Disaster'),
       ),
       body: Center(
