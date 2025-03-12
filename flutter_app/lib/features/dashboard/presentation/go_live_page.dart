@@ -62,11 +62,6 @@ class _GoLivePageState extends State<GoLivePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: Colors.black,
-      appBar: AppBar(
-        backgroundColor: Colors.black,
-        automaticallyImplyLeading: false,
-        title: Text('Report a Disaster'),
-      ),
       body: Center(
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(16.0),

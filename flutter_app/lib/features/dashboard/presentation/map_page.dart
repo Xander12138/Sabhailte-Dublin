@@ -69,11 +69,6 @@ class _MapPageState extends State<MapPage> {
     );
 
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Colors.black,
-        automaticallyImplyLeading: false,
-        title: Text('Map'),
-      ),
       body: Stack(
         children: [
           FlutterMap(
