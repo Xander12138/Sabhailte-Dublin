@@ -61,6 +61,7 @@ class _LiveStreamPageState extends State<LiveStreamPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        automaticallyImplyLeading: false,
         title: Text('Live Stream'),
       ),
       body: _cameraController?.value.isInitialized ?? false

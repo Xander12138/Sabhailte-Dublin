@@ -32,25 +32,18 @@ class _HomePageState extends State<HomePage> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
+        automaticallyImplyLeading: false,
         backgroundColor: Colors.black,
         title: Text(
           _getTitle(), // Dynamically change title based on selected tab
           style: TextStyle(color: Colors.white),
         ),
-        actions: [
-          IconButton(
-            icon: Icon(Icons.search, color: Colors.white),
-            onPressed: () {
-              // Add search functionality here
-            },
-          ),
-        ],
       ),
       body: _pages[_selectedIndex], // Display the selected page
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,
         onTap: _onItemTapped,
-        selectedItemColor: Colors.yellow,
+        selectedItemColor: Colors.black,
         unselectedItemColor: Colors.grey,
         backgroundColor: Colors.black,
         items: const [

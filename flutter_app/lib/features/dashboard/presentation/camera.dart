@@ -46,9 +46,6 @@ class _CameraPageState extends State<CameraPage> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text("Camera"),
-      ),
       body: isCameraInitialized
           ? Stack(
               children: [
