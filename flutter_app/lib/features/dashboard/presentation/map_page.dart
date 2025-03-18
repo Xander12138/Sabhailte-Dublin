@@ -69,10 +69,6 @@ class _MapPageState extends State<MapPage> {
     );
 
     return Scaffold(
-      appBar: AppBar(
-        backgroundColor: Colors.black,
-        title: Text('Route and Restricted Area'),
-      ),
       body: Stack(
         children: [
           FlutterMap(
