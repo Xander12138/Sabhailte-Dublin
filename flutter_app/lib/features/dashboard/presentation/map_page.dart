@@ -5,8 +5,9 @@ import 'package:http/http.dart' as http;
 import 'package:latlong2/latlong.dart';
 import 'package:sabhailte_dubin/core/constant.dart';
 
-
 class MapPage extends StatefulWidget {
+  const MapPage({super.key});
+
   @override
   _MapPageState createState() => _MapPageState();
 }
@@ -25,9 +26,7 @@ class _MapPageState extends State<MapPage> {
 
   Future<LatLng?> _getCoordinatesFromLocation(String location) async {
     try {
-      final response = await http.get(
-        Uri.parse('https://api.opencagedata.com/geocode/v1/json?q=$location&key=952fab34fe944ac7a7155d132f948b2b'),
-      );
+      final response = await http.get(Uri.parse('$BASE_URL/route-map'));
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         if (data['results'].isNotEmpty) {
@@ -52,7 +51,7 @@ class _MapPageState extends State<MapPage> {
 
     if (startLoc.isEmpty || destLoc.isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Please enter both start and destination')),
+        const SnackBar(content: Text('Please enter both start and destination')),
       );
       return;
     }
@@ -62,7 +61,7 @@ class _MapPageState extends State<MapPage> {
 
     if (startCoords == null || destCoords == null) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Could not geocode one or both locations')),
+        const SnackBar(content: Text('Could not geocode one or both locations')),
       );
       return;
     }
@@ -71,52 +70,51 @@ class _MapPageState extends State<MapPage> {
   }
 
   Future<void> _fetchCustomRoute(LatLng start, LatLng end) async {
-  try {
-    final startString = '${start.latitude},${start.longitude}';
-    final endString = '${end.latitude},${end.longitude}';
+    try {
+      final startString = '${start.latitude},${start.longitude}';
+      final endString = '${end.latitude},${end.longitude}';
 
-    final url = '$BASE_URL/route_map?start=$startString&end=$endString';
-    final response = await http.get(Uri.parse(url));
+      final url = '$BASE_URL/route_map?start=$startString&end=$endString';
+      final response = await http.get(Uri.parse(url));
 
-    if (response.statusCode == 200) {
-      final data = jsonDecode(response.body);
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
 
-      // 确保 `route_map` 存在并解析
-      if (data.containsKey('route_map')) {
-        final route = data['route_map'] as List;
-        List<LatLng> points = route.map((coord) {
-          return LatLng(coord[0], coord[1]); // 注意顺序是 [lat, lng]
-        }).toList();
+        // Ensure `route_map` exists and parse it
+        if (data.containsKey('route_map')) {
+          final route = data['route_map'] as List;
+          List<LatLng> points = route.map((coord) {
+            return LatLng(coord[0], coord[1]); // Note order is [lat, lng]
+          }).toList();
 
-        setState(() {
-          routePoints = points;
-        });
+          setState(() {
+            routePoints = points;
+          });
+        } else {
+          print('No route_map data found in response');
+        }
+
+        // Parse `restrict_areas`
+        if (data.containsKey('restrict_areas')) {
+          final restrictAreas = data['restrict_areas'] as List;
+          List<LatLng> areaPoints = restrictAreas.map((coord) {
+            return LatLng(coord[0], coord[1]); // Note order is [lat, lng]
+          }).toList();
+          print('Found restrict_areas data in response');
+
+          setState(() {
+            restrictedAreaPoints = areaPoints;
+          });
+        } else {
+          print('No restrict_areas data found in response');
+        }
       } else {
-        print('No route_map data found in response');
+        print('Failed to fetch route. Status code: ${response.statusCode}');
       }
-
-      // 解析 `restrict_areas`
-      if (data.containsKey('restrict_areas')) {
-        final restrictAreas = data['restrict_areas'] as List;
-        List<LatLng> areaPoints = restrictAreas.map((coord) {
-          return LatLng(coord[0], coord[1]); // 注意顺序是 [lat, lng]
-        }).toList();
-        print('Found restrict_areas data found in response');
-
-        setState(() {
-          restrictedAreaPoints = areaPoints;
-        });
-      } else {
-        print('No restrict_areas data found in response');
-      }
-    } else {
-      print('Failed to fetch route. Status code: ${response.statusCode}');
+    } catch (e) {
+      print('Error fetching route: $e');
     }
-  } catch (e) {
-    print('Error fetching route: $e');
   }
-}
-
 
   Future<void> _fetchOSRMRoute(LatLng start, LatLng end) async {
     try {
@@ -152,10 +150,6 @@ class _MapPageState extends State<MapPage> {
     );
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text('Route Map'),
-        backgroundColor: Colors.black,
-      ),
       body: Stack(
         children: [
           FlutterMap(
@@ -172,93 +166,18 @@ class _MapPageState extends State<MapPage> {
                 PolylineLayer(
                   polylines: [routePolyline],
                 ),
-
-                if (restrictedAreaPoints.isNotEmpty)
+              if (restrictedAreaPoints.isNotEmpty)
                 PolygonLayer(
                   polygons: [
                     Polygon(
                       points: restrictedAreaPoints,
-                      color: Colors.red.withOpacity(0.3), // 设置限制区域的颜色和透明度
-                      borderColor: Colors.red, // 边框颜色
-                      borderStrokeWidth: 2.0, // 边框宽度
+                      color: Colors.red.withOpacity(0.8), // Fills the area with semi-transparent red
+                      borderColor: Colors.red, // Sets the border to red
+                      borderStrokeWidth: 2.0,
                     ),
                   ],
-                )
+                ),
             ],
-          ),
-          Positioned(
-            top: 40,
-            left: 16,
-            right: 16,
-            child: Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(
-                  'Route Map',
-                  style: TextStyle(color: Colors.white, fontSize: 20, fontWeight: FontWeight.bold),
-                ),
-              ],
-            ),
-          ),
-          Positioned(
-            top: 80,
-            left: 16,
-            right: 16,
-            child: Card(
-              color: Colors.white70,
-              shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
-              elevation: 3,
-              child: Padding(
-                padding: const EdgeInsets.all(12.0),
-                child: Column(
-                  children: [
-                    TextField(
-                      controller: _startController,
-                      decoration: InputDecoration(
-                        labelText: 'Start Location',
-                        labelStyle: TextStyle(color: Colors.black),
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                        prefixIcon: Icon(Icons.my_location, color: Colors.black),
-                      ),
-                    ),
-                    SizedBox(height: 10),
-                    TextField(
-                      controller: _destinationController,
-                      decoration: InputDecoration(
-                        labelText: 'Destination Location',
-                        labelStyle: TextStyle(color: Colors.black),
-                        border: OutlineInputBorder(borderRadius: BorderRadius.circular(8)),
-                        prefixIcon: Icon(Icons.flag, color: Colors.black),
-                      ),
-                    ),
-                    SizedBox(height: 10),
-                    SizedBox(
-                      width: double.infinity,
-                      child: ElevatedButton(
-                        onPressed: _computeRoute,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: Colors.blue[800],
-                          shape: RoundedRectangleBorder(
-                            borderRadius: BorderRadius.circular(8),
-                          ),
-                          padding: EdgeInsets.symmetric(vertical: 14),
-                        ),
-                        child: Text(
-                          'Show Route',
-                          style: TextStyle(
-                            color: Colors.white,
-                            fontSize: 16,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
-                      ),
-                    ),
-                  ],
-                ),
-              ),
-            ),
           ),
         ],
       ),

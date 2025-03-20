@@ -1,0 +1,2 @@
+/Users/navi/Desktop/master/DUBLIN/Sabhailte-Dublin/flutter_app/android/app/.cxx/Debug/61i6i5md/x86_64/CMakeFiles/edit_cache.dir
+/Users/navi/Desktop/master/DUBLIN/Sabhailte-Dublin/flutter_app/android/app/.cxx/Debug/61i6i5md/x86_64/CMakeFiles/rebuild_cache.dir

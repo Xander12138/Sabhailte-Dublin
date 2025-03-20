@@ -79,7 +79,7 @@ class _NewsPageState extends State<NewsPage> {
           Expanded(
             child: newsItems.isEmpty
                 ? Center(
-                    child: CircularProgressIndicator(color: Colors.yellow),
+                    child: CircularProgressIndicator(color: Colors.black),
                   )
                 : ListView.builder(
                     itemCount: newsItems.length,
