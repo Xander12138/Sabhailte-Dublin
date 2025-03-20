@@ -42,4 +42,3 @@ rule CLEAN
 rule HELP
   command = /Users/navi/Library/Android/sdk/cmake/3.22.1/bin/ninja -t targets
   description = All primary targets available:
-

@@ -19,7 +19,7 @@ def get_news_list():
     return db_utils.get_news_list()
 
 
-def get_news(news_id):
+def get_news(news_id: str):
     """Retrieve a single news entry by its ID.
 
     Args:

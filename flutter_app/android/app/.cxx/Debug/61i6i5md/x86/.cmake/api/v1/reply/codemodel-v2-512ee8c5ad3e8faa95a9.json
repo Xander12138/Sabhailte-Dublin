@@ -1,13 +1,13 @@
 {
-	"configurations" : 
+	"configurations" :
 	[
 		{
-			"directories" : 
+			"directories" :
 			[
 				{
 					"build" : ".",
 					"jsonFile" : "directory-.-Debug-f5ebdc15457944623624.json",
-					"minimumCMakeVersion" : 
+					"minimumCMakeVersion" :
 					{
 						"string" : "3.6.0"
 					},
@@ -16,10 +16,10 @@
 				}
 			],
 			"name" : "Debug",
-			"projects" : 
+			"projects" :
 			[
 				{
-					"directoryIndexes" : 
+					"directoryIndexes" :
 					[
 						0
 					],
@@ -30,12 +30,12 @@
 		}
 	],
 	"kind" : "codemodel",
-	"paths" : 
+	"paths" :
 	{
 		"build" : "/Users/navi/Desktop/master/DUBLIN/Sabhailte-Dublin/flutter_app/android/app/.cxx/Debug/61i6i5md/x86",
 		"source" : "/Users/navi/development/flutter/packages/flutter_tools/gradle/src/main/groovy"
 	},
-	"version" : 
+	"version" :
 	{
 		"major" : 2,
 		"minor" : 3

@@ -4,13 +4,13 @@ import flexpolyline as fp
 import requests
 
 
-def fetch_route_from_api():
+def fetch_route_from_api(origin='53.3441,-6.2573', destination='53.3430,-6.2672'):
     """Fetches the route from the HERE API."""
     API_KEY = os.getenv('API_KEY'),
 
     # Parameters for API request
-    origin = '53.3441,-6.2573'
-    destination = '53.3430,-6.2672'
+    # origin = '53.3441,-6.2573'
+    # destination = '53.3430,-6.2672'
     avoid_areas = 'bbox:-6.2700,53.3420,-6.2500,53.3460'
     url = 'https://router.hereapi.com/v8/routes'
     params = {
@@ -34,7 +34,7 @@ def fetch_route_from_api():
     return decode_route_map
 
 
-def get_evacuate_map():
+def get_evacuate_map(start, end):
     """Generates the evacuation map with route and restricted areas.
 
     :return: A dictionary containing 'route_map' and 'restrict_areas'.
@@ -49,4 +49,4 @@ def get_evacuate_map():
         (53.3460, -6.2700),  # Back to starting point
     ]
 
-    return {'route_map': fetch_route_from_api(), 'restrict_areas': mock_restrict_areas}
+    return {'route_map': fetch_route_from_api(start, end), 'restrict_areas': mock_restrict_areas}
