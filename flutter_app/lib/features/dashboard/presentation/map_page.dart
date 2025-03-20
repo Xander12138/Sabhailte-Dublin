@@ -71,8 +71,8 @@ class _MapPageState extends State<MapPage> {
 
   Future<void> _fetchCustomRoute(LatLng start, LatLng end) async {
   try {
-    final startString = '${start.longitude},${start.latitude}';
-    final endString = '${end.longitude},${end.latitude}';
+    final startString = '${start.latitude},${start.longitude}';
+    final endString = '${end.latitude},${end.longitude}';
 
     final url = '$BASE_URL/route_map?start=$startString&end=$endString';
     final response = await http.get(Uri.parse(url));

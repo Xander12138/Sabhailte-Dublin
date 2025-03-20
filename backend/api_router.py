@@ -83,9 +83,10 @@ def api_read_news(news_id: int):
         raise HTTPException(status_code=500, detail=f'Error retrieving news: {e}')
 
 
-@app.get('/route-map')
-def get_route_map():
-    return map_handler.get_evacuate_map()
+@app.get('/route_map')
+def get_route_map(start: str, end: str):
+    print('start:', start, 'end:', end)
+    return map_handler.get_evacuate_map(start, end)
 
 
 @app.put('/news/{news_id}')
