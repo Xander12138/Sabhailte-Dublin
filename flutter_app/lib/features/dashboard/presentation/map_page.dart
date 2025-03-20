@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:http/http.dart' as http;
 import 'package:latlong2/latlong.dart';
+import 'package:sabhailte_dubin/core/constant.dart';
+
 
 class MapPage extends StatefulWidget {
   @override
@@ -64,8 +66,41 @@ class _MapPageState extends State<MapPage> {
       return;
     }
 
-    await _fetchOSRMRoute(startCoords, destCoords);
+    await _fetchCustomRoute(startCoords, destCoords);
   }
+
+  Future<void> _fetchCustomRoute(LatLng start, LatLng end) async {
+  try {
+    final startString = '${start.longitude},${start.latitude}';
+    final endString = '${end.longitude},${end.latitude}';
+
+    final url = '$BASE_URL/route_map?start=$startString&end=$endString';
+    final response = await http.get(Uri.parse(url));
+
+    if (response.statusCode == 200) {
+      final data = jsonDecode(response.body);
+
+      // 确保 `route_map` 存在并解析
+      if (data.containsKey('route_map')) {
+        final route = data['route_map'] as List;
+        List<LatLng> points = route.map((coord) {
+          return LatLng(coord[0], coord[1]); // 注意顺序是 [lat, lng]
+        }).toList();
+
+        setState(() {
+          routePoints = points;
+        });
+      } else {
+        print('No route_map data found in response');
+      }
+    } else {
+      print('Failed to fetch route. Status code: ${response.statusCode}');
+    }
+  } catch (e) {
+    print('Error fetching route: $e');
+  }
+}
+
 
   Future<void> _fetchOSRMRoute(LatLng start, LatLng end) async {
     try {
