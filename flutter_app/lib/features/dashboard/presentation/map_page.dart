@@ -16,6 +16,7 @@ class _MapPageState extends State<MapPage> {
   final TextEditingController _destinationController = TextEditingController();
 
   List<LatLng> routePoints = [];
+  List<LatLng> restrictedAreaPoints = [];
 
   @override
   void initState() {
@@ -93,6 +94,21 @@ class _MapPageState extends State<MapPage> {
       } else {
         print('No route_map data found in response');
       }
+
+      // 解析 `restrict_areas`
+      if (data.containsKey('restrict_areas')) {
+        final restrictAreas = data['restrict_areas'] as List;
+        List<LatLng> areaPoints = restrictAreas.map((coord) {
+          return LatLng(coord[0], coord[1]); // 注意顺序是 [lat, lng]
+        }).toList();
+        print('Found restrict_areas data found in response');
+
+        setState(() {
+          restrictedAreaPoints = areaPoints;
+        });
+      } else {
+        print('No restrict_areas data found in response');
+      }
     } else {
       print('Failed to fetch route. Status code: ${response.statusCode}');
     }
@@ -156,6 +172,18 @@ class _MapPageState extends State<MapPage> {
                 PolylineLayer(
                   polylines: [routePolyline],
                 ),
+
+                if (restrictedAreaPoints.isNotEmpty)
+                PolygonLayer(
+                  polygons: [
+                    Polygon(
+                      points: restrictedAreaPoints,
+                      color: Colors.red.withOpacity(0.3), // 设置限制区域的颜色和透明度
+                      borderColor: Colors.red, // 边框颜色
+                      borderStrokeWidth: 2.0, // 边框宽度
+                    ),
+                  ],
+                )
             ],
           ),
           Positioned(
