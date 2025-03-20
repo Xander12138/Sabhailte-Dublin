@@ -73,7 +73,7 @@ def api_list_news():
 
 
 @app.get('/news/{news_id}')
-def api_read_news(news_id: int):
+def api_read_news(news_id: str):
     try:
         news_item = news_handler.get_news(news_id)
         return news_item
@@ -90,7 +90,7 @@ def get_route_map(start: str, end: str):
 
 
 @app.put('/news/{news_id}')
-def api_update_news(news_id: int, news: NewsUpdate):
+def api_update_news(news_id: str, news: NewsUpdate):
     try:
         updated = news_handler.update_news(
             news_id,
@@ -108,7 +108,7 @@ def api_update_news(news_id: int, news: NewsUpdate):
 
 
 @app.delete('/news/{news_id}')
-def api_delete_news(news_id: int):
+def api_delete_news(news_id: str):
     try:
         result = news_handler.delete_news(news_id)
         return result
