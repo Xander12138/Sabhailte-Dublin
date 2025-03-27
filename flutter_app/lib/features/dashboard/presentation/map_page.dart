@@ -16,6 +16,7 @@ class _MapPageState extends State<MapPage> {
   final TextEditingController _startController = TextEditingController();
   final TextEditingController _endController = TextEditingController();
   List<LatLng> routePoints = []; // 路线的坐标点
+  bool _isLoading = false; // 加载状态
 
   // 获取地点的经纬度
   Future<LatLng?> _getCoordinatesFromLocation(String location) async {
@@ -42,6 +43,10 @@ class _MapPageState extends State<MapPage> {
 
   // 调用自定义后台接口获取路线
   Future<void> _fetchRouteFromBackend(String startLat, String startLng, String endLat, String endLng) async {
+    setState(() {
+      _isLoading = true; // 开始加载
+    });
+
     try {
       final url = Uri.parse('$BASE_URL/route_map'); // 替换为你的后台接口地址
       final response = await http.post(
@@ -57,10 +62,10 @@ class _MapPageState extends State<MapPage> {
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        final List<dynamic> coordinates = data['route']; // 假设后台返回的路线点在 `route` 字段中
+        final List<dynamic> coordinates = data['route_map']; // 确保字段名与返回的数据一致
         setState(() {
           routePoints = coordinates
-              .map((coord) => LatLng(coord[1], coord[0])) // 转换为 LatLng 格式
+              .map((coord) => LatLng(coord[0], coord[1])) // 转换为 LatLng 格式
               .toList();
         });
       } else {
@@ -71,6 +76,10 @@ class _MapPageState extends State<MapPage> {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(content: Text('Failed to fetch route from backend')),
       );
+    } finally {
+      setState(() {
+        _isLoading = false; // 结束加载
+      });
     }
   }
 
@@ -145,6 +154,8 @@ class _MapPageState extends State<MapPage> {
               ],
             ),
           ),
+          if (_isLoading) // 显示加载指示器
+            Center(child: CircularProgressIndicator()),
           Expanded(
             child: FlutterMap(
               options: MapOptions(
