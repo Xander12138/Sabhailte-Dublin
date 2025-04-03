@@ -7,6 +7,8 @@ import 'live_stream_page.dart';
 import 'viewer_page.dart';
 
 class GoLivePage extends StatefulWidget {
+  const GoLivePage({super.key});
+
   @override
   _GoLivePageState createState() => _GoLivePageState();
 }

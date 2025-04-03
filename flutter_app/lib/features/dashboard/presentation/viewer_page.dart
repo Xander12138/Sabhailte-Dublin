@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import 'package:web_socket_channel/web_socket_channel.dart';
 
 class ViewerPage extends StatefulWidget {
+  const ViewerPage({super.key});
+
   @override
   _ViewerPageState createState() => _ViewerPageState();
 }

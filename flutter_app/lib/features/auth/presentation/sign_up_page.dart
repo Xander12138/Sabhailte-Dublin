@@ -5,6 +5,8 @@ class SignUpPage extends StatelessWidget {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
 
+  SignUpPage({super.key});
+
   void _register(BuildContext context) async {
     final email = _emailController.text.trim();
     final password = _passwordController.text.trim();

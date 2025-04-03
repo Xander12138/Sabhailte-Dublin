@@ -16,6 +16,7 @@ class _MapPageState extends State<MapPage> {
   final TextEditingController _startController = TextEditingController();
   final TextEditingController _endController = TextEditingController();
   List<LatLng> routePoints = []; // 路线的坐标点
+  List<LatLng> restrictAreaPoints = []; // 限制区域的坐标点
   bool _isLoading = false; // 加载状态
 
   // 获取地点的经纬度
@@ -65,6 +66,12 @@ class _MapPageState extends State<MapPage> {
         final List<dynamic> coordinates = data['route_map']; // 确保字段名与返回的数据一致
         setState(() {
           routePoints = coordinates
+              .map((coord) => LatLng(coord[0], coord[1])) // 转换为 LatLng 格式
+              .toList();
+
+          // 解析限制区域的坐标
+          final List<dynamic> restrictAreas = data['restrict_areas'];
+          restrictAreaPoints = restrictAreas
               .map((coord) => LatLng(coord[0], coord[1])) // 转换为 LatLng 格式
               .toList();
         });
@@ -121,6 +128,13 @@ class _MapPageState extends State<MapPage> {
       color: Colors.blue,
     );
 
+    final restrictPolygon = Polygon(
+      points: restrictAreaPoints,
+      color: Colors.red.withOpacity(0.3),
+      borderStrokeWidth: 2.0,
+      borderColor: Colors.red,
+    );
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Route Search'),
@@ -170,6 +184,10 @@ class _MapPageState extends State<MapPage> {
                 if (routePoints.isNotEmpty)
                   PolylineLayer(
                     polylines: [routePolyline],
+                  ),
+                if (restrictAreaPoints.isNotEmpty)
+                  PolygonLayer(
+                    polygons: [restrictPolygon],
                   ),
               ],
             ),

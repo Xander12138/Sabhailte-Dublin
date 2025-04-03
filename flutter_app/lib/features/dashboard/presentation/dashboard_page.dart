@@ -6,6 +6,8 @@ import 'ultra_911_page.dart';
 import 'alerts_page.dart';
 
 class HomePage extends StatefulWidget {
+  const HomePage({super.key});
+
   @override
   _HomePageState createState() => _HomePageState();
 }

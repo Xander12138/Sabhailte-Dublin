@@ -4,6 +4,8 @@ import 'package:web_socket_channel/web_socket_channel.dart';
 import 'package:web_socket_channel/status.dart' as status;
 
 class LiveStreamPage extends StatefulWidget {
+  const LiveStreamPage({super.key});
+
   @override
   _LiveStreamPageState createState() => _LiveStreamPageState();
 }

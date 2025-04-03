@@ -24,6 +24,8 @@ def fetch_route_from_api(start_lat, start_lng, end_lat, end_lng):
         'apiKey': API_KEY
     }
 
+    print('====> params: ', params)
+
     # Send Get Request
     response = requests.get(url, params=params)
     response.raise_for_status()

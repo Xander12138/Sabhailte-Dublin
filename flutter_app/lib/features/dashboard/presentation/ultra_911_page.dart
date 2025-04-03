@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
 class Ultra911Page extends StatelessWidget {
+  const Ultra911Page({super.key});
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(

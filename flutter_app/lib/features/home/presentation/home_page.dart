@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'dart:ui';
 
 class MapAlertPage extends StatelessWidget {
+  const MapAlertPage({super.key});
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(

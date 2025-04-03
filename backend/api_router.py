@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from src import map_handler, news_handler
 from src.data_models import NewsCreate, NewsUpdate
@@ -84,10 +84,16 @@ def api_read_news(news_id: str):
 
 
 @app.post('/route_map')
-def get_route_map(start_lat: str = '53.3441',
-                  start_lng: str = '-6.2573',
-                  end_lat: str = '53.3430',
-                  end_lng: str = '-6.2672'):
+async def get_route_map(request: Request):
+    # Extract JSON data from the request body
+    body = await request.json()
+
+    # Retrieve parameters from the JSON body
+    start_lat = body.get('start_lat')
+    start_lng = body.get('start_lng')
+    end_lat = body.get('end_lat')
+    end_lng = body.get('end_lng')
+
     print(f"start: {start_lat},{start_lng}   end: {end_lat},{end_lng}")
     return map_handler.get_evacuate_map(start_lat, start_lng, end_lat, end_lng)
 

@@ -5,6 +5,8 @@ import 'dart:typed_data';
 import 'package:sabhailte_dubin/core/constant.dart';
 
 class NewsPage extends StatefulWidget {
+  const NewsPage({super.key});
+
   @override
   _NewsPageState createState() => _NewsPageState();
 }
