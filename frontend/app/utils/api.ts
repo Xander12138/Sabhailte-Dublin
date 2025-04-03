@@ -1,6 +1,6 @@
 import axios from "axios";
 
-const backendApi = "http://170.106.106.90:8000";
+const backendApi = "http://170.106.106.90:8001";
 
 const newApi = {
   getNews: async () => {

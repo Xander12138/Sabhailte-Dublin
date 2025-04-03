@@ -2,7 +2,7 @@ import Link from "next/link";
 
 export default async function Home() {
   return (
-    <div className="p-8 bg-gray-100 min-h-screen">
+    <div className="p-8 bg-gray-100 h-[calc(100vh-64px)] w-screen flex flex-col items-center justify-center">
       <h1 className="text-4xl font-bold text-gray-800 text-center">Welcome to the Disaster Management Dashboard</h1>
       <p className="mt-6 text-lg text-gray-600 text-center">
         Navigate to the Disaster Reports section to view and manage disasters.
