@@ -20,7 +20,6 @@ class AccidentEvent {
 }
 
 final List<AccidentEvent> accidentEvents = [
-  // Coordinates are roughly centered around Dublin, with slight variations.
   AccidentEvent(type: 'robbery', location: LatLng(53.3498, -6.2603)),
   AccidentEvent(type: 'danger', location: LatLng(53.3520, -6.2650)),
   AccidentEvent(type: 'fire', location: LatLng(53.3460, -6.2580)),
@@ -30,7 +29,6 @@ final List<AccidentEvent> accidentEvents = [
   AccidentEvent(type: 'fire', location: LatLng(53.3500, -6.2590)),
   AccidentEvent(type: 'stealing', location: LatLng(53.3490, -6.2640)),
 ];
-
 
 List<Marker> buildAccidentMarkers(List<AccidentEvent> events) {
   return events.map((event) {
@@ -66,13 +64,89 @@ List<Marker> buildAccidentMarkers(List<AccidentEvent> events) {
   }).toList();
 }
 
-
 class _MapPageState extends State<MapPage> {
   final TextEditingController _startController = TextEditingController();
   final TextEditingController _endController = TextEditingController();
+  List<Marker> newsMarkers = [];
   List<LatLng> routePoints = []; // 路线的坐标点
   List<LatLng> restrictAreaPoints = []; // 限制区域的坐标点
   bool _isLoading = false; // 加载状态
+
+  // Fetch news data from your API, extract coordinates, and create markers.
+  Future<void> _fetchNewsData() async {
+    try {
+      final url = Uri.parse('http://170.106.106.90:8001/news');
+      final response = await http.get(url);
+
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final List<dynamic> newsList = data['news'];
+
+        // Clear any existing news markers.
+        newsMarkers.clear();
+
+        for (var newsItem in newsList) {
+          // The location info is the 7th element (index 6) in the newsItem array.
+          final String locationJson = newsItem[6];
+          final Map<String, dynamic> locationMap = jsonDecode(locationJson);
+
+          final double lat = locationMap['latitude'];
+          final double lng = locationMap['longitude'];
+
+          // Extract the news type from the new field (assumed to be at index 7).
+          final String newsType = newsItem[8].toString();
+
+          // Choose the corresponding asset based on the news type.
+          String assetPath;
+          switch (newsType) {
+            case 'robbery':
+              assetPath = 'assets/robbery.png';
+              break;
+            case 'danger':
+              assetPath = 'assets/danger.png';
+              break;
+            case 'fire':
+              assetPath = 'assets/fire.png';
+              break;
+            case 'stealing':
+              assetPath = 'assets/stealing.png';
+              break;
+            default:
+              assetPath = 'assets/danger.png';
+          }
+
+          final marker = Marker(
+            width: 80.0,
+            height: 80.0,
+            point: LatLng(lat, lng),
+            builder: (ctx) => Container(
+              child: Image.asset(
+                assetPath,
+                fit: BoxFit.contain,
+              ),
+            ),
+          );
+
+          newsMarkers.add(marker);
+        }
+        // Update the UI after fetching the news.
+        setState(() {});
+      } else {
+        throw Exception('Failed to fetch news data');
+      }
+    } catch (e) {
+      print('Error fetching news data: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Error fetching news data')),
+      );
+    }
+  }
+  @override
+  void initState() {
+    super.initState();
+    // Fetch news data when the widget initializes.
+    _fetchNewsData();
+  }
 
   // 获取地点的经纬度
   Future<LatLng?> _getCoordinatesFromLocation(String location) async {
@@ -246,8 +320,9 @@ class _MapPageState extends State<MapPage> {
                   PolygonLayer(
                     polygons: [restrictPolygon],
                   ),
+                if (newsMarkers.isNotEmpty)
                   MarkerLayer(
-                    markers: accidentMarkers,
+                    markers: newsMarkers,
                   ),
               ],
             ),
