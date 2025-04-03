@@ -67,7 +67,7 @@ class _NewsPageState extends State<NewsPage> {
         setState(() {
           newsItems = fetchedNews;
         });
-        
+
         // Fetch reactions for each news item
         for (var news in newsItems) {
           await fetchReactions(news["id"]);
@@ -82,28 +82,28 @@ class _NewsPageState extends State<NewsPage> {
       );
     }
   }
-  
+
   Future<void> fetchReactions(String newsId) async {
     try {
       final response = await http.get(
         Uri.parse('$BASE_URL/news/$newsId/reactions')
       );
-      
+
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        
+
         setState(() {
           // Find the news item and update its reactions
           for (int i = 0; i < newsItems.length; i++) {
             if (newsItems[i]["id"] == newsId) {
               newsItems[i]["reactions"] = data["counts"];
-              
+
               // Get the user from AuthProvider instead of directly using Firebase UID
               final authProvider = Provider.of<AuthProvider>(context, listen: false);
               // Use the internal user_id if available, otherwise fall back to Firebase UID
-              String currentUserId = authProvider.user?.userId ?? 
+              String currentUserId = authProvider.user?.userId ??
                                     (FirebaseAuth.instance.currentUser?.uid ?? "anonymous_user");
-              
+
               final reactions = data["reactions"] as List;
               for (var reaction in reactions) {
                 if (reaction["user_id"] == currentUserId) {
@@ -111,7 +111,7 @@ class _NewsPageState extends State<NewsPage> {
                   break;
                 }
               }
-              
+
               break;
             }
           }
@@ -121,15 +121,15 @@ class _NewsPageState extends State<NewsPage> {
       print('Error fetching reactions: $e');
     }
   }
-  
+
   Future<void> reactToNews(String newsId, String reactionType) async {
     try {
       // Get the user from AuthProvider instead of directly using Firebase UID
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
       // Use the internal user_id if available, otherwise fall back to Firebase UID
-      String currentUserId = authProvider.user?.userId ?? 
+      String currentUserId = authProvider.user?.userId ??
                              (FirebaseAuth.instance.currentUser?.uid ?? "anonymous_user");
-      
+
       final response = await http.post(
         Uri.parse('$BASE_URL/news/$newsId/reactions'),
         headers: {'Content-Type': 'application/json'},
@@ -138,7 +138,7 @@ class _NewsPageState extends State<NewsPage> {
           'reaction_type': reactionType,
         }),
       );
-      
+
       if (response.statusCode == 200) {
         // Refresh reactions for this news item
         await fetchReactions(newsId);
@@ -152,19 +152,19 @@ class _NewsPageState extends State<NewsPage> {
       );
     }
   }
-  
+
   Future<void> deleteReaction(String newsId) async {
     try {
       // Get the user from AuthProvider instead of directly using Firebase UID
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
       // Use the internal user_id if available, otherwise fall back to Firebase UID
-      String currentUserId = authProvider.user?.userId ?? 
+      String currentUserId = authProvider.user?.userId ??
                              (FirebaseAuth.instance.currentUser?.uid ?? "anonymous_user");
-      
+
       final response = await http.delete(
         Uri.parse('$BASE_URL/news/$newsId/reactions/$currentUserId'),
       );
-      
+
       if (response.statusCode == 200) {
         // Refresh reactions for this news item
         await fetchReactions(newsId);
@@ -187,25 +187,25 @@ class _NewsPageState extends State<NewsPage> {
         maxHeight: 800,
         imageQuality: 85,
       );
-      
+
       if (pickedFile != null) {
         final bytes = await pickedFile.readAsBytes();
-        
+
         // Convert to base64 and verify it's properly formatted
         final base64String = base64Encode(bytes);
-        
+
         // Validate that we have a proper base64 string (not a URL)
         if (base64String.startsWith('http')) {
           throw Exception('Invalid image format: URL detected instead of Base64');
         }
-        
+
         // Using mounted check before setState to avoid issues with async operations
         if (mounted) {
           setState(() {
             _imageBase64 = base64String;
           });
         }
-        
+
         print('Image encoded successfully: ${base64String.length} bytes');
         // Only print a small prefix of the base64 string for debugging
         if (base64String.length > 30) {
@@ -226,14 +226,14 @@ class _NewsPageState extends State<NewsPage> {
     if (!_formKey.currentState!.validate()) {
       return;
     }
-    
+
     if (_imageBase64 == null) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(content: Text('Please select an image')),
       );
       return;
     }
-    
+
     // Validate the Base64 string once more
     try {
       // Just try to decode it to see if it's valid Base64
@@ -245,27 +245,27 @@ class _NewsPageState extends State<NewsPage> {
       );
       return;
     }
-    
+
     try {
       setState(() {
         _isSubmitting = true;
       });
-      
+
       // Get the current user ID
       final authProvider = Provider.of<AuthProvider>(context, listen: false);
       String firebaseUid = FirebaseAuth.instance.currentUser?.uid ?? "anonymous_user";
-      
+
       // Use the string user ID as is, without converting to integer
-      String userId = authProvider.user?.userId ?? 
+      String userId = authProvider.user?.userId ??
                        (firebaseUid.startsWith('user_') ? firebaseUid : "user_$firebaseUid");
-      
+
       // Create location JSON
       // Default to Dublin City coordinates if no location is specified
       Map<String, dynamic> locationData = {
         'latitude': 53.349805,
         'longitude': -6.26031,
       };
-      
+
       // If location is specified, use custom coordinates
       if (_locationController.text.isNotEmpty) {
         if (_locationController.text.toLowerCase().contains('north dublin')) {
@@ -280,11 +280,11 @@ class _NewsPageState extends State<NewsPage> {
           };
         }
       }
-      
+
       final location = jsonEncode(locationData);
-      
+
       print('Submitting news with image size: ${_imageBase64!.length} bytes');
-      
+
       // Submit the form data with string author_id
       final response = await http.post(
         Uri.parse('$BASE_URL/news'),
@@ -298,10 +298,10 @@ class _NewsPageState extends State<NewsPage> {
           'views': 0,
         }),
       );
-      
+
       print('Response status: ${response.statusCode}');
       print('Response body: ${response.body}');
-      
+
       if (response.statusCode == 200 || response.statusCode == 201) {
         // Clear the form
         _titleController.clear();
@@ -310,13 +310,13 @@ class _NewsPageState extends State<NewsPage> {
         setState(() {
           _imageBase64 = null;
         });
-        
+
         // Refresh the news list
         fetchNews();
-        
+
         // Close the dialog
         Navigator.of(context).pop();
-        
+
         // Show success message
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text('News added successfully')),
@@ -364,21 +364,21 @@ class _NewsPageState extends State<NewsPage> {
                           maxHeight: 800,
                           imageQuality: 85,
                         );
-                        
+
                         if (pickedFile != null) {
                           final bytes = await pickedFile.readAsBytes();
                           final base64String = base64Encode(bytes);
-                          
+
                           // Update both the parent state and dialog state
                           this.setState(() {
                             _imageBase64 = base64String;
                           });
-                          
+
                           // Update dialog state to refresh UI immediately
                           setState(() {
                             // This empty setState will trigger a rebuild with the new _imageBase64
                           });
-                          
+
                           print('Image encoded: ${base64String.length} bytes');
                         }
                       } catch (e) {
@@ -672,8 +672,8 @@ class _NewsPageState extends State<NewsPage> {
                       child: Icon(
                         Icons.thumb_up,
                         size: 16,
-                        color: news["userReaction"] == "like" 
-                            ? Colors.blue 
+                        color: news["userReaction"] == "like"
+                            ? Colors.blue
                             : Colors.grey[500],
                       ),
                     ),
@@ -681,8 +681,8 @@ class _NewsPageState extends State<NewsPage> {
                     Text(
                       (news["reactions"]["like"] ?? 0).toString(),
                       style: TextStyle(
-                        color: news["userReaction"] == "like" 
-                            ? Colors.blue 
+                        color: news["userReaction"] == "like"
+                            ? Colors.blue
                             : Colors.grey[500],
                         fontSize: 12,
                       ),
@@ -695,30 +695,30 @@ class _NewsPageState extends State<NewsPage> {
                   mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                   children: [
                     _buildReactionButton(
-                      context, 
-                      news, 
-                      "like", 
+                      context,
+                      news,
+                      "like",
                       Icons.thumb_up,
                       "Like",
                     ),
                     _buildReactionButton(
-                      context, 
-                      news, 
-                      "love", 
+                      context,
+                      news,
+                      "love",
                       Icons.favorite,
                       "Love",
                     ),
                     _buildReactionButton(
-                      context, 
-                      news, 
-                      "sad", 
+                      context,
+                      news,
+                      "sad",
                       Icons.sentiment_dissatisfied,
                       "Sad",
                     ),
                     _buildReactionButton(
-                      context, 
-                      news, 
-                      "angry", 
+                      context,
+                      news,
+                      "angry",
                       Icons.sentiment_very_dissatisfied,
                       "Angry",
                     ),
@@ -734,9 +734,9 @@ class _NewsPageState extends State<NewsPage> {
 
   // Helper method to build reaction buttons
   Widget _buildReactionButton(
-    BuildContext context, 
-    Map<String, dynamic> news, 
-    String reactionType, 
+    BuildContext context,
+    Map<String, dynamic> news,
+    String reactionType,
     IconData icon,
     String label,
   ) {
@@ -781,14 +781,14 @@ class _NewsPageState extends State<NewsPage> {
       if (base64String == null || base64String.isEmpty) {
         return _buildPlaceholderImage();
       }
-      
+
       // Check if it's a URL instead of Base64
       if (base64String.startsWith('http')) {
         // Return placeholder if it's a URL and not Base64
         print('Image is a URL, not Base64: $base64String');
         return _buildPlaceholderImage();
       }
-      
+
       // Check and remove Base64 prefix
       if (base64String.startsWith('data:image')) {
         final splitData = base64String.split(',');
@@ -796,7 +796,7 @@ class _NewsPageState extends State<NewsPage> {
           base64String = splitData[1];
         }
       }
-      
+
       // Ensure string is valid Base64
       try {
         // Add padding if needed
@@ -804,7 +804,7 @@ class _NewsPageState extends State<NewsPage> {
         if (padLength < 4) {
           base64String = base64String + ('=' * padLength);
         }
-        
+
         // Try to decode the Base64 data
         Uint8List imageBytes = base64Decode(base64String);
         return Image.memory(
@@ -824,7 +824,7 @@ class _NewsPageState extends State<NewsPage> {
       return _buildPlaceholderImage();
     }
   }
-  
+
   Widget _buildPlaceholderImage() {
     return Container(
       color: Colors.grey[800],
@@ -842,7 +842,7 @@ class _NewsPageState extends State<NewsPage> {
       final DateTime dateTime = DateTime.parse(timestamp);
       final now = DateTime.now();
       final difference = now.difference(dateTime);
-      
+
       // If less than 24 hours ago, show relative time
       if (difference.inHours < 24) {
         if (difference.inMinutes < 60) {
@@ -850,7 +850,7 @@ class _NewsPageState extends State<NewsPage> {
         } else {
           return '${difference.inHours} ${difference.inHours == 1 ? 'hour' : 'hours'} ago';
         }
-      } 
+      }
       // If it's today but more than an hour ago
       else if (dateTime.day == now.day && dateTime.month == now.month && dateTime.year == now.year) {
         return 'Today, ${dateTime.hour}:${dateTime.minute.toString().padLeft(2, '0')}';
@@ -867,16 +867,16 @@ class _NewsPageState extends State<NewsPage> {
       return timestamp; // fallback to original format
     }
   }
-  
+
   // Convert coordinates to a readable location name
   String _formatLocation(double latitude, double longitude) {
     // This is a simplified approach - in a real app you might use reverse geocoding
     // For now, just format the coordinates in a nicer way and add a nearby landmark or city name
-    
+
     // Round to 2 decimal places for display
     final lat = latitude.toStringAsFixed(2);
     final lon = longitude.toStringAsFixed(2);
-    
+
     // Hardcoded location names based on coordinates (just as an example)
     // In a real app, you would use reverse geocoding or a location database
     if (latitude > 53.3 && latitude < 53.4 && longitude > -6.3 && longitude < -6.2) {
@@ -886,7 +886,7 @@ class _NewsPageState extends State<NewsPage> {
     } else if (latitude > 53.4 && latitude < 53.5 && longitude > -6.2 && longitude < -6.1) {
       return 'North Dublin';
     }
-    
+
     // Default fallback - still shows coordinates but in a nicer format
     return 'Location: $lat°N, $lon°W';
   }

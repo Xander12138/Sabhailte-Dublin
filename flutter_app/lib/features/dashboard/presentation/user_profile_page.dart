@@ -7,7 +7,7 @@ class UserProfilePage extends StatelessWidget {
   Widget build(BuildContext context) {
     final authProvider = Provider.of<AuthProvider>(context);
     final user = authProvider.user;
-    
+
     return Scaffold(
       body: user == null
           ? Center(child: CircularProgressIndicator())
@@ -54,9 +54,9 @@ class UserProfilePage extends StatelessWidget {
                       ],
                     ),
                   ),
-                  
+
                   SizedBox(height: 20),
-                  
+
                   // Profile Information Section
                   Padding(
                     padding: EdgeInsets.symmetric(horizontal: 16),
@@ -71,16 +71,16 @@ class UserProfilePage extends StatelessWidget {
                           ),
                         ),
                         SizedBox(height: 16),
-                        
+
                         // Email info card
                         ProfileInfoCard(
                           icon: Icons.email,
                           title: 'Email Address',
                           value: user.email,
                         ),
-                        
+
                         SizedBox(height: 30),
-                        
+
                         // Action Buttons
                         ProfileActionButton(
                           icon: Icons.logout,

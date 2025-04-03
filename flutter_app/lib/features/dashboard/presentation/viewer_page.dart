@@ -10,7 +10,7 @@ import 'package:http/http.dart' as http;
 
 class ViewerPage extends StatefulWidget {
   final String? streamId;
-  
+
   const ViewerPage({Key? key, this.streamId}) : super(key: key);
 
   @override
@@ -28,7 +28,7 @@ class _ViewerPageState extends State<ViewerPage> {
   int _viewerCount = 0;
   bool _showMap = false;
   LatLng? _streamLocation;
-  
+
   @override
   void initState() {
     super.initState();
@@ -38,26 +38,26 @@ class _ViewerPageState extends State<ViewerPage> {
       _fetchAvailableStreams();
     }
   }
-  
+
   Future<void> _fetchAvailableStreams() async {
     setState(() {
       _isLoading = true;
       _statusMessage = 'Fetching available streams...';
     });
-    
+
     try {
       print("Attempting to fetch streams from: $BASE_URL/streams");
       final response = await httpGet('$BASE_URL/streams');
       print("Response status code: ${response.statusCode}");
       print("Response body: ${response.body}");
-      
+
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
         setState(() {
           _activeStreams = List<Map<String, dynamic>>.from(data['streams']);
           _isLoading = false;
-          _statusMessage = _activeStreams.isEmpty 
-            ? 'No active streams available' 
+          _statusMessage = _activeStreams.isEmpty
+            ? 'No active streams available'
             : 'Select a stream to watch';
         });
       } else {
@@ -74,23 +74,23 @@ class _ViewerPageState extends State<ViewerPage> {
       });
     }
   }
-  
+
   Future<void> _connectToStream(String streamId) async {
     setState(() {
       _isLoading = true;
       _statusMessage = 'Connecting to stream...';
     });
-    
+
     try {
       // Connect to stream WebSocket
       final wsUrl = 'ws://${BASE_URL.replaceAll('http://', '')}/ws/view/$streamId';
       print("Connecting to WebSocket: $wsUrl");
-      
+
       _channel = IOWebSocketChannel.connect(
         Uri.parse(wsUrl),
         pingInterval: Duration(seconds: 5),
       );
-      
+
       // Listen for stream data
       _channel!.stream.listen(
         (dynamic message) {
@@ -98,7 +98,7 @@ class _ViewerPageState extends State<ViewerPage> {
             try {
               print("Received string message: ${message.substring(0, message.length > 100 ? 100 : message.length)}...");
               final data = jsonDecode(message);
-              
+
               if (data.containsKey('status')) {
                 if (data['status'] == 'connected') {
                   setState(() {
@@ -107,10 +107,10 @@ class _ViewerPageState extends State<ViewerPage> {
                     _statusMessage = 'Connected to stream';
                     _streamMetadata = data['metadata'];
                     _viewerCount = data['viewers'] ?? 0;
-                    
+
                     // Check for location data
-                    if (_streamMetadata != null && 
-                        _streamMetadata!.containsKey('location') && 
+                    if (_streamMetadata != null &&
+                        _streamMetadata!.containsKey('location') &&
                         _streamMetadata!['location'] != null) {
                       final location = _streamMetadata!['location'];
                       _streamLocation = LatLng(
@@ -126,13 +126,13 @@ class _ViewerPageState extends State<ViewerPage> {
                   });
                 }
               }
-              
+
               if (data.containsKey('viewers')) {
                 setState(() {
                   _viewerCount = data['viewers'];
                 });
               }
-              
+
               if (data.containsKey('error')) {
                 setState(() {
                   _isLoading = false;
@@ -176,7 +176,7 @@ class _ViewerPageState extends State<ViewerPage> {
       });
     }
   }
-  
+
   void _disconnectFromStream() {
     print("Disconnecting from stream");
     _channel?.sink.close();
@@ -187,21 +187,21 @@ class _ViewerPageState extends State<ViewerPage> {
       _fetchAvailableStreams();
     });
   }
-  
+
   @override
   void dispose() {
     print("Disposing ViewerPage, closing channel");
     _channel?.sink.close();
     super.dispose();
   }
-  
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Colors.black,
-        title: Text(_streamMetadata != null && _streamMetadata!.containsKey('title') 
-          ? _streamMetadata!['title'] 
+        title: Text(_streamMetadata != null && _streamMetadata!.containsKey('title')
+          ? _streamMetadata!['title']
           : 'Live Viewer'),
         actions: [
           if (_streamLocation != null)
@@ -255,7 +255,7 @@ class _ViewerPageState extends State<ViewerPage> {
               : _buildStreamListView(),
     );
   }
-  
+
   Widget _buildStreamView() {
     return Column(
       children: [
@@ -277,7 +277,7 @@ class _ViewerPageState extends State<ViewerPage> {
                     style: TextStyle(color: Colors.white),
                   ),
                 ),
-                
+
               // Live indicator
               Positioned(
                 top: 16,
@@ -315,7 +315,7 @@ class _ViewerPageState extends State<ViewerPage> {
             ],
           ),
         ),
-        
+
         // Stream info and controls
         Container(
           padding: EdgeInsets.all(16),
@@ -331,7 +331,7 @@ class _ViewerPageState extends State<ViewerPage> {
                     style: TextStyle(color: Colors.white, fontSize: 16),
                   ),
                 ),
-                
+
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
@@ -355,7 +355,7 @@ class _ViewerPageState extends State<ViewerPage> {
       ],
     );
   }
-  
+
   Widget _buildMapView() {
     return Column(
       children: [
@@ -386,7 +386,7 @@ class _ViewerPageState extends State<ViewerPage> {
       ],
     );
   }
-  
+
   Widget _buildStreamListView() {
     if (_activeStreams.isEmpty) {
       return Center(
@@ -412,7 +412,7 @@ class _ViewerPageState extends State<ViewerPage> {
         ),
       );
     }
-    
+
     return RefreshIndicator(
       onRefresh: () async {
         await _fetchAvailableStreams();
@@ -426,7 +426,7 @@ class _ViewerPageState extends State<ViewerPage> {
           final title = stream['title'] ?? 'Stream $streamId';
           final viewers = stream['viewers'] ?? 0;
           final duration = stream['duration'] ?? 0;
-          
+
           return Card(
             color: Colors.grey[850],
             margin: EdgeInsets.only(bottom: 12),
@@ -505,7 +505,7 @@ class _ViewerPageState extends State<ViewerPage> {
       ),
     );
   }
-  
+
   String _formatDuration(int seconds) {
     if (seconds < 60) {
       return 'Started $seconds seconds ago';

@@ -35,24 +35,24 @@ class _GoLivePageState extends State<GoLivePage> {
     setState(() {
       _isLoading = true;
     });
-    
+
     // Check camera permission
     var camera = await Permission.camera.status;
     if (camera.isDenied) {
       camera = await Permission.camera.request();
     }
-    
+
     // Check microphone permission
     var microphone = await Permission.microphone.status;
     if (microphone.isDenied) {
       microphone = await Permission.microphone.request();
     }
-    
+
     // Check location permission if we're sharing location
     if (_shareLocation) {
       await _checkLocationPermission();
     }
-    
+
     setState(() {
       _isLoading = false;
       if (camera.isDenied || camera.isPermanentlyDenied) {
@@ -62,10 +62,10 @@ class _GoLivePageState extends State<GoLivePage> {
       }
     });
   }
-  
+
   Future<void> _checkLocationPermission() async {
     if (_locationPermissionChecked) return;
-    
+
     bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
     if (!serviceEnabled) {
       setState(() {
@@ -74,7 +74,7 @@ class _GoLivePageState extends State<GoLivePage> {
       });
       return;
     }
-    
+
     LocationPermission permission = await Geolocator.checkPermission();
     if (permission == LocationPermission.denied) {
       permission = await Geolocator.requestPermission();
@@ -86,7 +86,7 @@ class _GoLivePageState extends State<GoLivePage> {
         return;
       }
     }
-    
+
     if (permission == LocationPermission.deniedForever) {
       setState(() {
         _shareLocation = false;
@@ -94,7 +94,7 @@ class _GoLivePageState extends State<GoLivePage> {
       });
       return;
     }
-    
+
     try {
       _currentPosition = await Geolocator.getCurrentPosition(
         desiredAccuracy: LocationAccuracy.high
@@ -159,18 +159,18 @@ class _GoLivePageState extends State<GoLivePage> {
       });
       return;
     }
-    
+
     // Recheck location if needed
     if (_shareLocation && !_locationPermissionChecked) {
       await _checkLocationPermission();
     }
-    
+
     // Create stream metadata
     final streamMetadata = {
       'title': _titleController.text,
       'description': _descriptionController.text,
     };
-    
+
     // Add location if available and sharing is enabled
     if (_shareLocation && _currentPosition != null) {
       streamMetadata['location'] = jsonEncode({
@@ -178,7 +178,7 @@ class _GoLivePageState extends State<GoLivePage> {
         'longitude': _currentPosition!.longitude,
       });
     }
-    
+
     // Navigate to live stream page with metadata
     Navigator.push(
       context,
@@ -223,7 +223,7 @@ class _GoLivePageState extends State<GoLivePage> {
                     ),
                   ),
                   SizedBox(height: 16),
-                  
+
                   // Stream Description Input
                   TextField(
                     controller: _descriptionController,
@@ -244,7 +244,7 @@ class _GoLivePageState extends State<GoLivePage> {
                     ),
                   ),
                   SizedBox(height: 16),
-                  
+
                   // Share Location Switch
                   Container(
                     padding: EdgeInsets.all(16),
@@ -290,7 +290,7 @@ class _GoLivePageState extends State<GoLivePage> {
                       ],
                     ),
                   ),
-                  
+
                   if (_errorMessage.isNotEmpty)
                     Padding(
                       padding: EdgeInsets.only(top: 16),
@@ -299,9 +299,9 @@ class _GoLivePageState extends State<GoLivePage> {
                         style: TextStyle(color: Colors.red),
                       ),
                     ),
-                  
+
                   SizedBox(height: 32),
-                  
+
                   // Go Live Button
                   ElevatedButton(
                     onPressed: _startLiveStream,
@@ -315,9 +315,9 @@ class _GoLivePageState extends State<GoLivePage> {
                       style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
                     ),
                   ),
-                  
+
                   SizedBox(height: 24),
-                  
+
                   // See Live Button
                   ElevatedButton(
                     onPressed: () {

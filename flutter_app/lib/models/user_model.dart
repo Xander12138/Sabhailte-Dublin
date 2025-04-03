@@ -28,4 +28,4 @@ class UserModel {
       'email': email,
     };
   }
-} 
+}

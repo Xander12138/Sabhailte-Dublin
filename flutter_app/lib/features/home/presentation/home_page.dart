@@ -7,7 +7,7 @@ class HomePage extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final authProvider = Provider.of<AuthProvider>(context);
-    
+
     // If loading, show loading indicator
     if (authProvider.isLoading) {
       return Scaffold(
@@ -16,7 +16,7 @@ class HomePage extends StatelessWidget {
         ),
       );
     }
-    
+
     // If not authenticated, redirect to login
     if (!authProvider.isAuthenticated) {
       WidgetsBinding.instance.addPostFrameCallback((_) {
@@ -28,7 +28,7 @@ class HomePage extends StatelessWidget {
         ),
       );
     }
-    
+
     // User is authenticated, show home content
     return Scaffold(
       body: DashboardPage(),

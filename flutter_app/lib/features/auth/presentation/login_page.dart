@@ -24,12 +24,12 @@ class LoginPage extends StatelessWidget {
 
       // Sign in with Firebase
       final userCredential = await FirebaseAuth.instance.signInWithCredential(credential);
-      
+
       // Sync user with PostgreSQL database
       if (userCredential.user != null) {
         await _authService.syncWithPostgres(userCredential.user!);
       }
-      
+
       Navigator.pushReplacementNamed(context, '/home');
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
