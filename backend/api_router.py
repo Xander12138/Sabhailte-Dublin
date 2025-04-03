@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException
+from fastapi import FastAPI, HTTPException, Request
 from fastapi.middleware.cors import CORSMiddleware
 from src import map_handler, news_handler
 from src.data_models import NewsCreate, NewsUpdate
@@ -7,6 +7,7 @@ app = FastAPI()
 
 app.add_middleware(
     CORSMiddleware,
+    allow_origins=['*'],
     allow_origin_regex='http.*',
     allow_credentials=True,
     allow_methods=['*'],
@@ -83,10 +84,19 @@ def api_read_news(news_id: str):
         raise HTTPException(status_code=500, detail=f'Error retrieving news: {e}')
 
 
-@app.get('/route_map')
-def get_route_map(start: str, end: str):
-    print('start:', start, 'end:', end)
-    return map_handler.get_evacuate_map(start, end)
+@app.post('/route_map')
+async def get_route_map(request: Request):
+    # Extract JSON data from the request body
+    body = await request.json()
+
+    # Retrieve parameters from the JSON body
+    start_lat = body.get('start_lat')
+    start_lng = body.get('start_lng')
+    end_lat = body.get('end_lat')
+    end_lng = body.get('end_lng')
+
+    print(f"start: {start_lat},{start_lng}   end: {end_lat},{end_lng}")
+    return map_handler.get_evacuate_map(start_lat, start_lng, end_lat, end_lng)
 
 
 @app.put('/news/{news_id}')
