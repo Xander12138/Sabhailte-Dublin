@@ -8,6 +8,7 @@ import 'viewer_page.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'package:geolocator/geolocator.dart';
 import 'dart:async';
+import 'package:camera/camera.dart';
 
 class GoLivePage extends StatefulWidget {
   @override
@@ -24,6 +25,7 @@ class _GoLivePageState extends State<GoLivePage> {
   String _errorMessage = '';
   Position? _currentPosition;
   bool _locationPermissionChecked = false;
+  CameraController? _cameraController;
 
   @override
   void initState() {
@@ -31,26 +33,43 @@ class _GoLivePageState extends State<GoLivePage> {
     _checkPermissions();
   }
 
+  Future<void> _initializeCamera() async {
+    try {
+      final cameras = await availableCameras();
+      if (cameras.isEmpty) return;
+      
+      _cameraController = CameraController(
+        cameras[0],
+        ResolutionPreset.medium,
+      );
+      await _cameraController!.initialize();
+      setState(() {});
+    } catch (e) {
+      print('Error initializing camera: $e');
+    }
+  }
+
   Future<void> _checkPermissions() async {
     setState(() {
       _isLoading = true;
     });
 
-    // Check camera permission
     var camera = await Permission.camera.status;
     if (camera.isDenied) {
       camera = await Permission.camera.request();
     }
 
-    // Check microphone permission
     var microphone = await Permission.microphone.status;
     if (microphone.isDenied) {
       microphone = await Permission.microphone.request();
     }
 
-    // Check location permission if we're sharing location
     if (_shareLocation) {
       await _checkLocationPermission();
+    }
+
+    if (camera.isGranted) {
+      await _initializeCamera();
     }
 
     setState(() {
@@ -204,6 +223,22 @@ class _GoLivePageState extends State<GoLivePage> {
                 crossAxisAlignment: CrossAxisAlignment.stretch,
                 children: [
                   SizedBox(height: 20),
+                  
+                  // Camera Preview
+                  if (_cameraController != null && _cameraController!.value.isInitialized)
+                    Container(
+                      height: 200,
+                      decoration: BoxDecoration(
+                        color: Colors.grey[900],
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(10),
+                        child: CameraPreview(_cameraController!),
+                      ),
+                    ),
+                  SizedBox(height: 20),
+
                   // Stream Title Input
                   TextField(
                     controller: _titleController,
@@ -360,6 +395,7 @@ class _GoLivePageState extends State<GoLivePage> {
     _descriptionController.dispose();
     _locationController.dispose();
     _timeController.dispose();
+    _cameraController?.dispose();
     super.dispose();
   }
 }
