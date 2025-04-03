@@ -12,26 +12,152 @@ class MapPage extends StatefulWidget {
   _MapPageState createState() => _MapPageState();
 }
 
+class AccidentEvent {
+  final String type; // e.g., 'robbery', 'danger', 'fire', 'stealing'
+  final LatLng location;
+
+  AccidentEvent({required this.type, required this.location});
+}
+
+final List<AccidentEvent> accidentEvents = [
+  AccidentEvent(type: 'robbery', location: LatLng(53.3498, -6.2603)),
+  AccidentEvent(type: 'danger', location: LatLng(53.3520, -6.2650)),
+  AccidentEvent(type: 'fire', location: LatLng(53.3460, -6.2580)),
+  AccidentEvent(type: 'stealing', location: LatLng(53.3480, -6.2620)),
+  AccidentEvent(type: 'robbery', location: LatLng(53.3510, -6.2620)),
+  AccidentEvent(type: 'danger', location: LatLng(53.3470, -6.2570)),
+  AccidentEvent(type: 'fire', location: LatLng(53.3500, -6.2590)),
+  AccidentEvent(type: 'stealing', location: LatLng(53.3490, -6.2640)),
+];
+
+List<Marker> buildAccidentMarkers(List<AccidentEvent> events) {
+  return events.map((event) {
+    String assetPath;
+    switch (event.type) {
+      case 'robbery':
+        assetPath = 'assets/robbery.png';
+        break;
+      case 'danger':
+        assetPath = 'assets/danger.png';
+        break;
+      case 'fire':
+        assetPath = 'assets/fire.png';
+        break;
+      case 'stealing':
+        assetPath = 'assets/stealing.png';
+        break;
+      default:
+        assetPath = 'assets/default.png';
+    }
+
+    return Marker(
+      width: 80.0,
+      height: 80.0,
+      point: event.location,
+      builder: (ctx) => Container(
+        child: Image.asset(
+          assetPath,
+          fit: BoxFit.contain,
+        ),
+      ),
+    );
+  }).toList();
+}
+
 class _MapPageState extends State<MapPage> {
   final TextEditingController _startController = TextEditingController();
-  final TextEditingController _destinationController = TextEditingController();
+  final TextEditingController _endController = TextEditingController();
+  List<Marker> newsMarkers = [];
+  List<LatLng> routePoints = []; // 路线的坐标点
+  List<LatLng> restrictAreaPoints = []; // 限制区域的坐标点
+  bool _isLoading = false; // 加载状态
 
-  List<LatLng> routePoints = [];
-  List<LatLng> restrictedAreaPoints = [];
+  // Fetch news data from your API, extract coordinates, and create markers.
+  Future<void> _fetchNewsData() async {
+    try {
+      final url = Uri.parse('http://170.106.106.90:8001/news');
+      final response = await http.get(url);
 
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        final List<dynamic> newsList = data['news'];
+
+        // Clear any existing news markers.
+        newsMarkers.clear();
+
+        for (var newsItem in newsList) {
+          // The location info is the 7th element (index 6) in the newsItem array.
+          final String locationJson = newsItem[6];
+          final Map<String, dynamic> locationMap = jsonDecode(locationJson);
+
+          final double lat = locationMap['latitude'];
+          final double lng = locationMap['longitude'];
+
+          // Extract the news type from the new field (assumed to be at index 7).
+          final String newsType = newsItem[8].toString();
+
+          // Choose the corresponding asset based on the news type.
+          String assetPath;
+          switch (newsType) {
+            case 'robbery':
+              assetPath = 'assets/robbery.png';
+              break;
+            case 'danger':
+              assetPath = 'assets/danger.png';
+              break;
+            case 'fire':
+              assetPath = 'assets/fire.png';
+              break;
+            case 'stealing':
+              assetPath = 'assets/stealing.png';
+              break;
+            default:
+              assetPath = 'assets/danger.png';
+          }
+
+          final marker = Marker(
+            width: 80.0,
+            height: 80.0,
+            point: LatLng(lat, lng),
+            builder: (ctx) => Container(
+              child: Image.asset(
+                assetPath,
+                fit: BoxFit.contain,
+              ),
+            ),
+          );
+
+          newsMarkers.add(marker);
+        }
+        // Update the UI after fetching the news.
+        setState(() {});
+      } else {
+        throw Exception('Failed to fetch news data');
+      }
+    } catch (e) {
+      print('Error fetching news data: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Error fetching news data')),
+      );
+    }
+  }
   @override
   void initState() {
     super.initState();
+    // Fetch news data when the widget initializes.
+    _fetchNewsData();
   }
 
+  // 获取地点的经纬度
   Future<LatLng?> _getCoordinatesFromLocation(String location) async {
     try {
-      final response = await http.get(Uri.parse('$BASE_URL/route-map'));
+      final response = await http.get(Uri.parse(
+          'https://nominatim.openstreetmap.org/search?q=$location&format=json&accept-language=en'));
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-        if (data['results'].isNotEmpty) {
-          final lat = data['results'][0]['geometry']['lat'];
-          final lng = data['results'][0]['geometry']['lng'];
+        if (data.isNotEmpty) {
+          final lat = double.parse(data[0]['lat']);
+          final lng = double.parse(data[0]['lon']);
           return LatLng(lat, lng);
         } else {
           throw Exception('No results found for location: $location');
@@ -45,99 +171,81 @@ class _MapPageState extends State<MapPage> {
     }
   }
 
-  Future<void> _computeRoute() async {
-    final startLoc = _startController.text.trim();
-    final destLoc = _destinationController.text.trim();
+  // 调用自定义后台接口获取路线
+  Future<void> _fetchRouteFromBackend(String startLat, String startLng, String endLat, String endLng) async {
+    setState(() {
+      _isLoading = true; // 开始加载
+    });
 
-    if (startLoc.isEmpty || destLoc.isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Please enter both start and destination')),
-      );
-      return;
-    }
-
-    final startCoords = await _getCoordinatesFromLocation(startLoc);
-    final destCoords = await _getCoordinatesFromLocation(destLoc);
-
-    if (startCoords == null || destCoords == null) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Could not geocode one or both locations')),
-      );
-      return;
-    }
-
-    await _fetchCustomRoute(startCoords, destCoords);
-  }
-
-  Future<void> _fetchCustomRoute(LatLng start, LatLng end) async {
     try {
-      final startString = '${start.latitude},${start.longitude}';
-      final endString = '${end.latitude},${end.longitude}';
-
-      final url = '$BASE_URL/route_map?start=$startString&end=$endString';
-      final response = await http.get(Uri.parse(url));
+      final url = Uri.parse('$BASE_URL/route_map'); // 替换为你的后台接口地址
+      final response = await http.post(
+        url,
+        headers: {'Content-Type': 'application/json'},
+        body: jsonEncode({
+          'start_lat': startLat,
+          'start_lng': startLng,
+          'end_lat': endLat,
+          'end_lng': endLng,
+        }),
+      );
 
       if (response.statusCode == 200) {
         final data = jsonDecode(response.body);
-
-        // Ensure `route_map` exists and parse it
-        if (data.containsKey('route_map')) {
-          final route = data['route_map'] as List;
-          List<LatLng> points = route.map((coord) {
-            return LatLng(coord[0], coord[1]); // Note order is [lat, lng]
-          }).toList();
-
-          setState(() {
-            routePoints = points;
-          });
-        } else {
-          print('No route_map data found in response');
-        }
-
-        // Parse `restrict_areas`
-        if (data.containsKey('restrict_areas')) {
-          final restrictAreas = data['restrict_areas'] as List;
-          List<LatLng> areaPoints = restrictAreas.map((coord) {
-            return LatLng(coord[0], coord[1]); // Note order is [lat, lng]
-          }).toList();
-          print('Found restrict_areas data in response');
-
-          setState(() {
-            restrictedAreaPoints = areaPoints;
-          });
-        } else {
-          print('No restrict_areas data found in response');
-        }
-      } else {
-        print('Failed to fetch route. Status code: ${response.statusCode}');
-      }
-    } catch (e) {
-      print('Error fetching route: $e');
-    }
-  }
-
-  Future<void> _fetchOSRMRoute(LatLng start, LatLng end) async {
-    try {
-      final startString = '${start.longitude},${start.latitude}';
-      final endString = '${end.longitude},${end.latitude}';
-      final url =
-          'http://router.project-osrm.org/route/v1/driving/$startString;$endString?overview=full&geometries=geojson';
-      final response = await http.get(Uri.parse(url));
-
-      if (response.statusCode == 200) {
-        final data = jsonDecode(response.body);
-        final route = data['routes'][0]['geometry']['coordinates'] as List;
-        List<LatLng> points = route.map((coord) {
-          return LatLng(coord[1], coord[0]);
-        }).toList();
+        final List<dynamic> coordinates = data['route_map']; // 确保字段名与返回的数据一致
         setState(() {
-          routePoints = points;
+          routePoints = coordinates
+              .map((coord) => LatLng(coord[0], coord[1])) // 转换为 LatLng 格式
+              .toList();
+
+          // 解析限制区域的坐标
+          final List<dynamic> restrictAreas = data['restrict_areas'];
+          restrictAreaPoints = restrictAreas
+              .map((coord) => LatLng(coord[0], coord[1])) // 转换为 LatLng 格式
+              .toList();
         });
       } else {
-        print('Failed to fetch route. Status code: ${response.statusCode}');
+        throw Exception('Failed to fetch route from backend');
       }
     } catch (e) {
-      print('Error fetching route: $e');
+      print('Error fetching route from backend: $e');
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Failed to fetch route from backend')),
+      );
+    } finally {
+      setState(() {
+        _isLoading = false; // 结束加载
+      });
+    }
+  }
+
+  // 搜索路线
+  Future<void> _searchRoute() async {
+    final startLocation = _startController.text;
+    final endLocation = _endController.text;
+
+    if (startLocation.isEmpty || endLocation.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Please enter both start and end locations')),
+      );
+      return;
+    }
+
+    final startCoords = await _getCoordinatesFromLocation(startLocation);
+    final endCoords = await _getCoordinatesFromLocation(endLocation);
+
+    if (startCoords != null && endCoords != null) {
+      final startLat = startCoords.latitude.toString();
+      final startLng = startCoords.longitude.toString();
+      final endLat = endCoords.latitude.toString();
+      final endLng = endCoords.longitude.toString();
+
+      // 调用后台接口获取路线
+      await _fetchRouteFromBackend(startLat, startLng, endLat, endLng);
+    } else {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('Could not find one or both locations')),
+      );
     }
   }
 
@@ -149,35 +257,75 @@ class _MapPageState extends State<MapPage> {
       color: Colors.blue,
     );
 
+    final restrictPolygon = Polygon(
+      points: restrictAreaPoints,
+      color: Colors.red.withOpacity(0.3),
+      borderStrokeWidth: 2.0,
+      borderColor: Colors.red,
+    );
+
+    final accidentMarkers = buildAccidentMarkers(accidentEvents);
+
     return Scaffold(
-      body: Stack(
+      appBar: AppBar(
+        title: const Text('Route Search'),
+      ),
+      body: Column(
         children: [
-          FlutterMap(
-            options: MapOptions(
-              center: LatLng(53.349805, -6.26031), // Default to Dublin
-              zoom: 12.0,
+          Padding(
+            padding: const EdgeInsets.all(16.0),
+            child: Column(
+              children: [
+                TextField(
+                  controller: _startController,
+                  decoration: const InputDecoration(
+                    hintText: 'Enter start location',
+                    labelText: 'Start Location',
+                  ),
+                ),
+                const SizedBox(height: 8.0),
+                TextField(
+                  controller: _endController,
+                  decoration: const InputDecoration(
+                    hintText: 'Enter end location',
+                    labelText: 'End Location',
+                  ),
+                ),
+                const SizedBox(height: 16.0),
+                ElevatedButton(
+                  onPressed: _searchRoute,
+                  child: const Text('Search Route'),
+                ),
+              ],
             ),
-            children: [
-              TileLayer(
-                urlTemplate: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
-                subdomains: ['a', 'b', 'c'],
+          ),
+          if (_isLoading) // 显示加载指示器
+            Center(child: CircularProgressIndicator()),
+          Expanded(
+            child: FlutterMap(
+              options: MapOptions(
+                center: LatLng(53.349805, -6.26031), // 默认设置为都柏林
+                zoom: 12.0,
               ),
-              if (routePoints.isNotEmpty)
-                PolylineLayer(
-                  polylines: [routePolyline],
+              children: [
+                TileLayer(
+                  urlTemplate: 'https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+                  subdomains: ['a', 'b', 'c'],
                 ),
-              if (restrictedAreaPoints.isNotEmpty)
-                PolygonLayer(
-                  polygons: [
-                    Polygon(
-                      points: restrictedAreaPoints,
-                      color: Colors.red.withOpacity(0.8), // Fills the area with semi-transparent red
-                      borderColor: Colors.red, // Sets the border to red
-                      borderStrokeWidth: 2.0,
-                    ),
-                  ],
-                ),
-            ],
+                if (routePoints.isNotEmpty)
+                  PolylineLayer(
+                    polylines: [routePolyline],
+                  ),
+                if (restrictAreaPoints.isNotEmpty)
+                  PolygonLayer(
+                    polygons: [restrictPolygon],
+                  ),
+                if (newsMarkers.isNotEmpty)
+                  MarkerLayer(
+                    markers: newsMarkers,
+                  ),
+              ],
+            ),
           ),
         ],
       ),
