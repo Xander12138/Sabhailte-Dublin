@@ -12,21 +12,60 @@ class MapPage extends StatefulWidget {
   _MapPageState createState() => _MapPageState();
 }
 
-// Define the coordinate for the image marker (adjust as needed)
-final LatLng imageMarkerLocation = LatLng(53.349805, -6.26031); // Example: Dublin center
+class AccidentEvent {
+  final String type; // e.g., 'robbery', 'danger', 'fire', 'stealing'
+  final LatLng location;
 
-// Create the marker with your image
-final imageMarker = Marker(
-  width: 80.0,
-  height: 80.0,
-  point: imageMarkerLocation,
-  builder: (ctx) => Container(
-    child: Image.asset(
-      'assets/fire_accidents.png', // Ensure this asset is added in your pubspec.yaml
-      fit: BoxFit.contain,
-    ),
-  ),
-);
+  AccidentEvent({required this.type, required this.location});
+}
+
+final List<AccidentEvent> accidentEvents = [
+  // Coordinates are roughly centered around Dublin, with slight variations.
+  AccidentEvent(type: 'robbery', location: LatLng(53.3498, -6.2603)),
+  AccidentEvent(type: 'danger', location: LatLng(53.3520, -6.2650)),
+  AccidentEvent(type: 'fire', location: LatLng(53.3460, -6.2580)),
+  AccidentEvent(type: 'stealing', location: LatLng(53.3480, -6.2620)),
+  AccidentEvent(type: 'robbery', location: LatLng(53.3510, -6.2620)),
+  AccidentEvent(type: 'danger', location: LatLng(53.3470, -6.2570)),
+  AccidentEvent(type: 'fire', location: LatLng(53.3500, -6.2590)),
+  AccidentEvent(type: 'stealing', location: LatLng(53.3490, -6.2640)),
+];
+
+
+List<Marker> buildAccidentMarkers(List<AccidentEvent> events) {
+  return events.map((event) {
+    String assetPath;
+    switch (event.type) {
+      case 'robbery':
+        assetPath = 'assets/robbery.png';
+        break;
+      case 'danger':
+        assetPath = 'assets/danger.png';
+        break;
+      case 'fire':
+        assetPath = 'assets/fire.png';
+        break;
+      case 'stealing':
+        assetPath = 'assets/stealing.png';
+        break;
+      default:
+        assetPath = 'assets/default.png';
+    }
+
+    return Marker(
+      width: 80.0,
+      height: 80.0,
+      point: event.location,
+      builder: (ctx) => Container(
+        child: Image.asset(
+          assetPath,
+          fit: BoxFit.contain,
+        ),
+      ),
+    );
+  }).toList();
+}
+
 
 class _MapPageState extends State<MapPage> {
   final TextEditingController _startController = TextEditingController();
@@ -151,6 +190,8 @@ class _MapPageState extends State<MapPage> {
       borderColor: Colors.red,
     );
 
+    final accidentMarkers = buildAccidentMarkers(accidentEvents);
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Route Search'),
@@ -206,7 +247,7 @@ class _MapPageState extends State<MapPage> {
                     polygons: [restrictPolygon],
                   ),
                   MarkerLayer(
-                    markers: [imageMarker],
+                    markers: accidentMarkers,
                   ),
               ],
             ),
