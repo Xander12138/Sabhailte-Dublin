@@ -100,3 +100,5 @@ flutter:
   assets:
     - assets/map_placeholder.png
     - assets/google.png
+    - assets/fire.png
+    - assets/fire_accidents.png

@@ -12,6 +12,22 @@ class MapPage extends StatefulWidget {
   _MapPageState createState() => _MapPageState();
 }
 
+// Define the coordinate for the image marker (adjust as needed)
+final LatLng imageMarkerLocation = LatLng(53.349805, -6.26031); // Example: Dublin center
+
+// Create the marker with your image
+final imageMarker = Marker(
+  width: 80.0,
+  height: 80.0,
+  point: imageMarkerLocation,
+  builder: (ctx) => Container(
+    child: Image.asset(
+      'assets/fire_accidents.png', // Ensure this asset is added in your pubspec.yaml
+      fit: BoxFit.contain,
+    ),
+  ),
+);
+
 class _MapPageState extends State<MapPage> {
   final TextEditingController _startController = TextEditingController();
   final TextEditingController _endController = TextEditingController();
@@ -188,6 +204,9 @@ class _MapPageState extends State<MapPage> {
                 if (restrictAreaPoints.isNotEmpty)
                   PolygonLayer(
                     polygons: [restrictPolygon],
+                  ),
+                  MarkerLayer(
+                    markers: [imageMarker],
                   ),
               ],
             ),
