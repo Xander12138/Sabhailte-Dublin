@@ -1,10 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
+import '../../../services/auth_service.dart';
 
 class LoginPage extends StatelessWidget {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+  final AuthService _authService = AuthService();
 
   Future<void> _signInWithGoogle(BuildContext context) async {
     try {
@@ -20,7 +22,14 @@ class LoginPage extends StatelessWidget {
         idToken: googleAuth.idToken,
       );
 
-      await FirebaseAuth.instance.signInWithCredential(credential);
+      // Sign in with Firebase
+      final userCredential = await FirebaseAuth.instance.signInWithCredential(credential);
+
+      // Sync user with PostgreSQL database
+      if (userCredential.user != null) {
+        await _authService.syncWithPostgres(userCredential.user!);
+      }
+
       Navigator.pushReplacementNamed(context, '/home');
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
@@ -41,10 +50,8 @@ class LoginPage extends StatelessWidget {
     }
 
     try {
-      await FirebaseAuth.instance.signInWithEmailAndPassword(
-        email: email,
-        password: password,
-      );
+      // Use AuthService instead of FirebaseAuth directly
+      await _authService.signInWithEmailAndPassword(email, password);
       Navigator.pushReplacementNamed(context, '/home');
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(

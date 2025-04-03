@@ -5,6 +5,9 @@ import 'camera.dart';
 import 'map_page.dart';
 import 'live_stream_page.dart';
 import 'viewer_page.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'package:geolocator/geolocator.dart';
+import 'dart:async';
 
 class GoLivePage extends StatefulWidget {
   @override
@@ -16,6 +19,97 @@ class _GoLivePageState extends State<GoLivePage> {
   final TextEditingController _descriptionController = TextEditingController();
   final TextEditingController _locationController = TextEditingController();
   final TextEditingController _timeController = TextEditingController();
+  bool _shareLocation = true;
+  bool _isLoading = false;
+  String _errorMessage = '';
+  Position? _currentPosition;
+  bool _locationPermissionChecked = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _checkPermissions();
+  }
+
+  Future<void> _checkPermissions() async {
+    setState(() {
+      _isLoading = true;
+    });
+
+    // Check camera permission
+    var camera = await Permission.camera.status;
+    if (camera.isDenied) {
+      camera = await Permission.camera.request();
+    }
+
+    // Check microphone permission
+    var microphone = await Permission.microphone.status;
+    if (microphone.isDenied) {
+      microphone = await Permission.microphone.request();
+    }
+
+    // Check location permission if we're sharing location
+    if (_shareLocation) {
+      await _checkLocationPermission();
+    }
+
+    setState(() {
+      _isLoading = false;
+      if (camera.isDenied || camera.isPermanentlyDenied) {
+        _errorMessage = 'Camera permission is required to go live.';
+      } else if (microphone.isDenied || microphone.isPermanentlyDenied) {
+        _errorMessage = 'Microphone permission is required to go live.';
+      }
+    });
+  }
+
+  Future<void> _checkLocationPermission() async {
+    if (_locationPermissionChecked) return;
+
+    bool serviceEnabled = await Geolocator.isLocationServiceEnabled();
+    if (!serviceEnabled) {
+      setState(() {
+        _shareLocation = false;
+        _errorMessage = 'Location services are disabled. Streaming without location.';
+      });
+      return;
+    }
+
+    LocationPermission permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.denied) {
+        setState(() {
+          _shareLocation = false;
+          _errorMessage = 'Location permission denied. Streaming without location.';
+        });
+        return;
+      }
+    }
+
+    if (permission == LocationPermission.deniedForever) {
+      setState(() {
+        _shareLocation = false;
+        _errorMessage = 'Location permission permanently denied. Streaming without location.';
+      });
+      return;
+    }
+
+    try {
+      _currentPosition = await Geolocator.getCurrentPosition(
+        desiredAccuracy: LocationAccuracy.high
+      );
+      setState(() {
+        _locationPermissionChecked = true;
+      });
+    } catch (e) {
+      print("Error getting location: $e");
+      setState(() {
+        _shareLocation = false;
+        _errorMessage = 'Error accessing location. Streaming without location.';
+      });
+    }
+  }
 
   Future<void> _reportDisaster(BuildContext context) async {
     final title = _titleController.text.trim();
@@ -58,135 +152,214 @@ class _GoLivePageState extends State<GoLivePage> {
     }
   }
 
+  void _startLiveStream() async {
+    if (_titleController.text.isEmpty) {
+      setState(() {
+        _errorMessage = 'Please enter a title for your stream.';
+      });
+      return;
+    }
+
+    // Recheck location if needed
+    if (_shareLocation && !_locationPermissionChecked) {
+      await _checkLocationPermission();
+    }
+
+    // Create stream metadata
+    final streamMetadata = {
+      'title': _titleController.text,
+      'description': _descriptionController.text,
+    };
+
+    // Add location if available and sharing is enabled
+    if (_shareLocation && _currentPosition != null) {
+      streamMetadata['location'] = jsonEncode({
+        'latitude': _currentPosition!.latitude,
+        'longitude': _currentPosition!.longitude,
+      });
+    }
+
+    // Navigate to live stream page with metadata
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => LiveStreamPage(streamMetadata: streamMetadata),
+      ),
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
-      body: Center(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(16.0),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              TextField(
-                controller: _titleController,
-                style: TextStyle(color: Colors.white),
-                decoration: InputDecoration(
-                  filled: true,
-                  fillColor: Colors.grey[800],
-                  hintText: 'Disaster Title',
-                  hintStyle: TextStyle(color: Colors.grey),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                ),
-              ),
-              SizedBox(height: 20),
-              TextField(
-                controller: _descriptionController,
-                style: TextStyle(color: Colors.white),
-                maxLines: 3,
-                decoration: InputDecoration(
-                  filled: true,
-                  fillColor: Colors.grey[800],
-                  hintText: 'Description',
-                  hintStyle: TextStyle(color: Colors.grey),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                ),
-              ),
-              SizedBox(height: 20),
-              TextField(
-                controller: _locationController,
-                style: TextStyle(color: Colors.white),
-                decoration: InputDecoration(
-                  filled: true,
-                  fillColor: Colors.grey[800],
-                  hintText: 'Location',
-                  hintStyle: TextStyle(color: Colors.grey),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                ),
-              ),
-              SizedBox(height: 20),
-              TextField(
-                controller: _timeController,
-                style: TextStyle(color: Colors.white),
-                decoration: InputDecoration(
-                  filled: true,
-                  fillColor: Colors.grey[800],
-                  hintText: 'Time (e.g., Nov 21, 6:46pm)',
-                  hintStyle: TextStyle(color: Colors.grey),
-                  border: OutlineInputBorder(borderRadius: BorderRadius.circular(10)),
-                ),
-              ),
-              SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: () => _reportDisaster(context),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.yellow[700],
-                  padding: EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                ),
-                child: Text(
-                  'Report Disaster',
-                  style: TextStyle(color: Colors.black, fontWeight: FontWeight.bold),
-                ),
-              ),
-              SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => const CameraPage()),
-                  );
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.blue[700],
-                  padding: EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                ),
-                child: Text(
-                  'Open Camera',
-                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-                ),
-              ),
-              SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => LiveStreamPage()), // Navigate to the live streaming page
-                  );
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.red[700],
-                  padding: EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                ),
-                child: Text(
-                  'Start Live Stream',
-                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-                ),
-              ),
-              SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(builder: (context) => ViewerPage()), // Navigate to the viewer page
-                  );
-                },
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: Colors.green[700],
-                  padding: EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                ),
-                child: Text(
-                  'See Live',
-                  style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
-                ),
-              ),
-            ],
-          ),
-        ),
+      appBar: AppBar(
+        title: Text('Go Live'),
+        backgroundColor: Colors.black,
       ),
+      backgroundColor: Colors.black,
+      body: _isLoading
+          ? Center(child: CircularProgressIndicator())
+          : SingleChildScrollView(
+              padding: EdgeInsets.all(20),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  SizedBox(height: 20),
+                  // Stream Title Input
+                  TextField(
+                    controller: _titleController,
+                    style: TextStyle(color: Colors.white),
+                    decoration: InputDecoration(
+                      labelText: 'Stream Title',
+                      labelStyle: TextStyle(color: Colors.grey),
+                      hintText: 'Enter a title for your stream',
+                      hintStyle: TextStyle(color: Colors.grey[700]),
+                      filled: true,
+                      fillColor: Colors.grey[900],
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: BorderSide.none,
+                      ),
+                      prefixIcon: Icon(Icons.title, color: Colors.grey),
+                    ),
+                  ),
+                  SizedBox(height: 16),
+
+                  // Stream Description Input
+                  TextField(
+                    controller: _descriptionController,
+                    style: TextStyle(color: Colors.white),
+                    maxLines: 3,
+                    decoration: InputDecoration(
+                      labelText: 'Description (Optional)',
+                      labelStyle: TextStyle(color: Colors.grey),
+                      hintText: 'Add details about your stream',
+                      hintStyle: TextStyle(color: Colors.grey[700]),
+                      filled: true,
+                      fillColor: Colors.grey[900],
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(10),
+                        borderSide: BorderSide.none,
+                      ),
+                      prefixIcon: Icon(Icons.description, color: Colors.grey),
+                    ),
+                  ),
+                  SizedBox(height: 16),
+
+                  // Share Location Switch
+                  Container(
+                    padding: EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.grey[900],
+                      borderRadius: BorderRadius.circular(10),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(Icons.location_on, color: Colors.grey),
+                        SizedBox(width: 16),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                'Share Your Location',
+                                style: TextStyle(
+                                  color: Colors.white,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
+                              Text(
+                                'Let viewers see where you\'re streaming from',
+                                style: TextStyle(color: Colors.grey[400], fontSize: 12),
+                              ),
+                            ],
+                          ),
+                        ),
+                        Switch(
+                          value: _shareLocation,
+                          onChanged: (value) {
+                            setState(() {
+                              _shareLocation = value;
+                              _errorMessage = '';
+                              if (value) {
+                                _checkLocationPermission();
+                              }
+                            });
+                          },
+                          activeColor: Colors.blue,
+                        ),
+                      ],
+                    ),
+                  ),
+
+                  if (_errorMessage.isNotEmpty)
+                    Padding(
+                      padding: EdgeInsets.only(top: 16),
+                      child: Text(
+                        _errorMessage,
+                        style: TextStyle(color: Colors.red),
+                      ),
+                    ),
+
+                  SizedBox(height: 32),
+
+                  // Go Live Button
+                  ElevatedButton(
+                    onPressed: _startLiveStream,
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.red,
+                      padding: EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    ),
+                    child: Text(
+                      'Go Live',
+                      style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold, fontSize: 16),
+                    ),
+                  ),
+
+                  SizedBox(height: 24),
+
+                  // See Live Button
+                  ElevatedButton(
+                    onPressed: () {
+                      try {
+                        print("Navigating to ViewerPage");
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(builder: (context) => ViewerPage()),
+                        ).then((value) {
+                          print("Returned from ViewerPage");
+                        }).catchError((error) {
+                          print("Navigation error: $error");
+                        });
+                      } catch (e) {
+                        print("Exception while navigating: $e");
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          SnackBar(content: Text("Error: $e")),
+                        );
+                      }
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.green[700],
+                      padding: EdgeInsets.symmetric(vertical: 16),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    ),
+                    child: Text(
+                      'See Live',
+                      style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold),
+                    ),
+                  ),
+                ],
+              ),
+            ),
     );
+  }
+
+  @override
+  void dispose() {
+    _titleController.dispose();
+    _descriptionController.dispose();
+    _locationController.dispose();
+    _timeController.dispose();
+    super.dispose();
   }
 }
