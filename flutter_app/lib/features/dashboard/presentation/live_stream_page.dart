@@ -572,25 +572,6 @@ class _LiveStreamPageState extends State<LiveStreamPage> with WidgetsBindingObse
                   ),
                 ),
 
-                // Stream title field
-                if (!_isStreaming && !_isConnecting)
-                  Padding(
-                    padding: const EdgeInsets.only(bottom: 16),
-                    child: TextField(
-                      style: const TextStyle(color: Colors.white),
-                      decoration: InputDecoration(
-                        filled: true,
-                        fillColor: Colors.grey[800],
-                        hintText: 'Stream Title',
-                        hintStyle: const TextStyle(color: Colors.grey),
-                        border: OutlineInputBorder(
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                      ),
-                      onChanged: (value) => setState(() {}),
-                    ),
-                  ),
-
                 // Stream button
                 ElevatedButton(
                   onPressed: _isConnecting
