@@ -1,9 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import '../../../services/auth_service.dart';
 
 class SignUpPage extends StatelessWidget {
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
+  final AuthService _authService = AuthService();
 
   void _register(BuildContext context) async {
     final email = _emailController.text.trim();
@@ -17,10 +19,7 @@ class SignUpPage extends StatelessWidget {
     }
 
     try {
-      await FirebaseAuth.instance.createUserWithEmailAndPassword(
-        email: email,
-        password: password,
-      );
+      await _authService.createUserWithEmailAndPassword(email, password);
       ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         content: Text('Sign-Up Successful!'),
       ));

@@ -3,14 +3,14 @@ import 'news_page.dart';
 import 'map_page.dart';
 import 'go_live_page.dart';
 import 'ultra_911_page.dart';
-import 'alerts_page.dart';
+import 'user_profile_page.dart';
 
-class HomePage extends StatefulWidget {
+class DashboardPage extends StatefulWidget {
   @override
-  _HomePageState createState() => _HomePageState();
+  _DashboardPageState createState() => _DashboardPageState();
 }
 
-class _HomePageState extends State<HomePage> {
+class _DashboardPageState extends State<DashboardPage> {
   int _selectedIndex = 0;
 
   // List of pages corresponding to bottom navigation items
@@ -19,7 +19,7 @@ class _HomePageState extends State<HomePage> {
     MapPage(), // Map Tab
     GoLivePage(), // Go Live Tab
     Ultra911Page(), // Ultra 911 Tab
-    AlertsPage(), // Alerts Tab
+    UserProfilePage(), // Profile Tab
   ];
 
   void _onItemTapped(int index) {
@@ -64,8 +64,8 @@ class _HomePageState extends State<HomePage> {
             label: 'Ultra 911',
           ),
           BottomNavigationBarItem(
-            icon: Icon(Icons.notifications),
-            label: 'Alerts',
+            icon: Icon(Icons.person),
+            label: 'Profile',
           ),
         ],
       ),
@@ -84,7 +84,7 @@ class _HomePageState extends State<HomePage> {
       case 3:
         return 'Ultra 911';
       case 4:
-        return 'Alerts';
+        return 'Profile';
       default:
         return '';
     }
