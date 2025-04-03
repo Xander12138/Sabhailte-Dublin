@@ -1,6 +1,6 @@
-'use client';
+"use client";
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState } from "react";
 
 // Define the Disaster type
 type Disaster = {
@@ -10,7 +10,7 @@ type Disaster = {
   location: string;
 };
 
-export default function DisastersPage() {
+export default function News() {
   const [disasters, setDisasters] = useState<Disaster[]>([]); // Type disasters as an array of Disaster
   const [error, setError] = useState<string | null>(null);
 
@@ -18,8 +18,8 @@ export default function DisastersPage() {
   useEffect(() => {
     async function fetchDisasters() {
       try {
-        const response = await fetch('http://127.0.0.1:8000/api/disasters'); // Replace with your backend URL
-        if (!response.ok) throw new Error('Failed to fetch disaster reports');
+        const response = await fetch("http://127.0.0.1:8000/api/disasters"); // Replace with your backend URL
+        if (!response.ok) throw new Error("Failed to fetch disaster reports");
         const data = await response.json();
         setDisasters(data.disasters || []);
       } catch (err) {
